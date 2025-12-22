@@ -60,9 +60,9 @@ const App = () => (
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/access-denied" element={<AccessDeniedPage />} />
               
-              {/* User Routes - Accessible by all authenticated users */}
+              {/* Public Routes - Content viewing accessible to all */}
               <Route element={
-                <ProtectedRoute>
+                <ProtectedRoute requireAuth={false}>
                   <UserLayout />
                 </ProtectedRoute>
               }>
@@ -71,6 +71,14 @@ const App = () => (
                 <Route path="/topic/:id" element={<TopicDetailPage />} />
                 <Route path="/content/:id" element={<ContentDetailPage />} />
                 <Route path="/community" element={<HomePage />} />
+              </Route>
+
+              {/* Protected User Routes - Require auth */}
+              <Route element={
+                <ProtectedRoute>
+                  <UserLayout />
+                </ProtectedRoute>
+              }>
                 <Route path="/profile" element={<ProfileSettingsPage />} />
               </Route>
 

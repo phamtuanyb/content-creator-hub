@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useDataStore, Content } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { Copy, Image as ImageIcon, Pencil, Trash2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import { LoginPromptModal } from '@/components/auth/LoginPromptModal';
 
 interface ContentCardProps {
   content: Content;
@@ -20,7 +23,10 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
   const { getTopicById, incrementCopyCount, images } = useDataStore();
   const { role, user, canEditContent, canPublishContent } = useAuth();
   const { buildCopyText } = useUserProfile();
+  const [showLoginModal, setShowLoginModal] = useState(false);
+  
   const topic = getTopicById(content.topicId);
+  const isAuthenticated = !!user;
   
   // Check if content has images
   const contentImages = images.filter(img => img.contentId === content.id);
@@ -29,6 +35,11 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
   const handleCopy = (e: React.MouseEvent, withHotline: boolean = true) => {
     e.preventDefault();
     e.stopPropagation();
+    
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     
     const textToCopy = withHotline ? buildCopyText(content.body) : content.body;
     navigator.clipboard.writeText(textToCopy);
@@ -96,27 +107,41 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
         </div>
         
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Copy with hotline - ALL roles */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => handleCopy(e, true)}
-            className="h-8 px-3 gap-1.5"
-          >
-            <Copy className="h-3.5 w-3.5" />
-            Sao chép
-          </Button>
+          {/* Copy with hotline - ALL roles (login required) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => handleCopy(e, true)}
+                className="h-8 px-3 gap-1.5"
+              >
+                <Copy className="h-3.5 w-3.5" />
+                Sao chép
+              </Button>
+            </TooltipTrigger>
+            {!isAuthenticated && (
+              <TooltipContent>Đăng nhập để sử dụng</TooltipContent>
+            )}
+          </Tooltip>
           
-          {/* Copy without hotline - ALL roles */}
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={(e) => handleCopy(e, false)}
-            className="h-8 px-2 text-muted-foreground"
-            title="Sao chép không hotline"
-          >
-            <Copy className="h-3.5 w-3.5" />
-          </Button>
+          {/* Copy without hotline - ALL roles (login required) */}
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={(e) => handleCopy(e, false)}
+                className="h-8 px-2 text-muted-foreground"
+                title="Sao chép không hotline"
+              >
+                <Copy className="h-3.5 w-3.5" />
+              </Button>
+            </TooltipTrigger>
+            {!isAuthenticated && (
+              <TooltipContent>Đăng nhập để sử dụng</TooltipContent>
+            )}
+          </Tooltip>
           
           {/* Edit - Admin OR (Editor AND owner) */}
           {canEditContent(content.ownerId || null) && onEdit && (
@@ -167,6 +192,8 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
           )}
         </div>
       </div>
+      
+      <LoginPromptModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </Link>
   );
 }
