@@ -3,37 +3,28 @@ import { cn } from '@/lib/utils';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import {
-  LayoutDashboard,
-  FolderTree,
   FileText,
-  Image,
-  Boxes,
-  Settings,
+  FolderOpen,
+  Plus,
   LogOut,
   ChevronLeft,
-  Users,
-  Shield,
+  UserCog,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
 
-export function AdminSidebar() {
+export function EditorSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const currentPath = location.pathname;
   const { t } = useI18n();
-  const { role, profile, signOut } = useAuth();
+  const { profile, signOut } = useAuth();
 
-  // Admin menu items - full access (role === 'admin' only)
   const menuItems = [
-    { icon: LayoutDashboard, label: t('admin.sidebar.dashboard'), path: '/admin' },
-    { icon: Users, label: 'User Management', path: '/admin/users' },
-    { icon: FileText, label: 'Content Management', path: '/admin/content' },
-    { icon: FolderTree, label: 'Topics Management', path: '/admin/topics' },
-    { icon: Boxes, label: 'Software Management', path: '/admin/software' },
-    { icon: Image, label: 'Image Library', path: '/admin/images' },
-    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+    { icon: FolderOpen, label: 'Content Library', path: '/editor/library' },
+    { icon: Plus, label: 'Create Content', path: '/editor/create' },
+    { icon: FileText, label: 'My Content', path: '/editor/my-content' },
   ];
 
   const handleLogout = async () => {
@@ -44,10 +35,10 @@ export function AdminSidebar() {
   return (
     <aside className="flex flex-col w-64 border-r border-border bg-card h-screen sticky top-0">
       <div className="p-4 border-b border-border">
-        <Link to="/admin" className="flex items-center gap-2">
+        <Link to="/editor/library" className="flex items-center gap-2">
           <span className="text-xl font-bold">
             <span className="text-primary">MKT</span>
-            <span className="text-foreground"> Admin</span>
+            <span className="text-foreground"> Editor</span>
           </span>
         </Link>
         {/* User info */}
@@ -56,9 +47,9 @@ export function AdminSidebar() {
             {profile?.full_name || profile?.email || 'User'}
           </div>
           <div className="mt-1">
-            <Badge className="bg-red-500/10 text-red-500 border-red-500/20">
-              <Shield className="h-3 w-3 mr-1" />
-              Admin
+            <Badge className="bg-blue-500/10 text-blue-500 border-blue-500/20">
+              <UserCog className="h-3 w-3 mr-1" />
+              Editor
             </Badge>
           </div>
         </div>
@@ -67,7 +58,7 @@ export function AdminSidebar() {
       <nav className="flex-1 p-4 space-y-1 overflow-y-auto">
         {menuItems.map((item) => {
           const isActive = currentPath === item.path || 
-            (item.path !== '/admin' && item.path !== '/editor' && currentPath.startsWith(item.path));
+            (item.path !== '/editor' && currentPath.startsWith(item.path));
           
           return (
             <Link

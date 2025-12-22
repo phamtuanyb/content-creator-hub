@@ -10,6 +10,8 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 // Layouts
 import { UserLayout } from "@/components/layout/UserLayout";
 import { AdminLayout } from "@/components/layout/AdminLayout";
+import { EditorLayout } from "@/components/layout/EditorLayout";
+import { SalesLayout } from "@/components/layout/SalesLayout";
 
 // User Pages
 import { HomePage } from "@/pages/user/HomePage";
@@ -24,6 +26,14 @@ import { AdminContentPage } from "@/pages/admin/AdminContentPage";
 import { AdminSoftwarePage } from "@/pages/admin/AdminSoftwarePage";
 import { AdminImagesPage } from "@/pages/admin/AdminImagesPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
+
+// Editor Pages
+import { EditorContentLibraryPage } from "@/pages/editor/EditorContentLibraryPage";
+import { EditorMyContentPage } from "@/pages/editor/EditorMyContentPage";
+import { EditorCreateContentPage } from "@/pages/editor/EditorCreateContentPage";
+
+// Sales Pages
+import { SalesContentLibraryPage } from "@/pages/sales/SalesContentLibraryPage";
 
 // Auth Pages
 import { AuthPage } from "@/pages/AuthPage";
@@ -75,18 +85,29 @@ const App = () => (
                 <Route path="content" element={<AdminContentPage />} />
                 <Route path="software" element={<AdminSoftwarePage />} />
                 <Route path="images" element={<AdminImagesPage />} />
-                <Route path="analytics" element={<AdminDashboardPage />} />
                 <Route path="settings" element={<AdminDashboardPage />} />
               </Route>
 
-              {/* Editor Routes - Admin and Editor can access */}
+              {/* Editor Routes - Only Editor can access */}
               <Route path="/editor" element={
-                <ProtectedRoute requiredRoles={['admin', 'editor']}>
-                  <AdminLayout />
+                <ProtectedRoute requiredRoles={['editor']}>
+                  <EditorLayout />
                 </ProtectedRoute>
               }>
-                <Route path="content" element={<AdminContentPage />} />
-                <Route path="my-content" element={<AdminContentPage />} />
+                <Route index element={<Navigate to="/editor/library" replace />} />
+                <Route path="library" element={<EditorContentLibraryPage />} />
+                <Route path="create" element={<EditorCreateContentPage />} />
+                <Route path="my-content" element={<EditorMyContentPage />} />
+              </Route>
+
+              {/* Sales Routes - Only Sales can access */}
+              <Route path="/sales" element={
+                <ProtectedRoute requiredRoles={['sales']}>
+                  <SalesLayout />
+                </ProtectedRoute>
+              }>
+                <Route index element={<Navigate to="/sales/library" replace />} />
+                <Route path="library" element={<SalesContentLibraryPage />} />
               </Route>
 
               {/* 404 */}

@@ -92,16 +92,22 @@ export function UserHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {canAccessAdmin() && (
+              {role === 'admin' && (
                 <DropdownMenuItem onClick={() => navigate('/admin')}>
                   <Settings className="mr-2 h-4 w-4" />
-                  Admin Panel
+                  Admin Dashboard
                 </DropdownMenuItem>
               )}
               {role === 'editor' && (
                 <DropdownMenuItem onClick={() => navigate('/editor/content')}>
                   <User className="mr-2 h-4 w-4" />
                   Editor Panel
+                </DropdownMenuItem>
+              )}
+              {role === 'sales' && (
+                <DropdownMenuItem onClick={() => navigate('/home')}>
+                  <User className="mr-2 h-4 w-4" />
+                  Content Library
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
