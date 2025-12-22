@@ -36,6 +36,7 @@ export interface Content {
   aiImagePrompt?: string;
   createdAt: string;
   copyCount: number;
+  ownerId?: string; // User ID of content owner
 }
 
 export interface AppImage {

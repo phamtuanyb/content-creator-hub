@@ -1,18 +1,23 @@
 import { Link } from 'react-router-dom';
 import { useDataStore, Content } from '@/lib/dataStore';
+import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, Image as ImageIcon } from 'lucide-react';
+import { Copy, Image as ImageIcon, Pencil, Trash2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContentCardProps {
   content: Content;
   showTopic?: boolean;
+  onEdit?: (content: Content) => void;
+  onDelete?: (content: Content) => void;
+  onPublish?: (content: Content) => void;
 }
 
-export function ContentCard({ content, showTopic = true }: ContentCardProps) {
+export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPublish }: ContentCardProps) {
   const { toast } = useToast();
   const { getTopicById, incrementCopyCount, images } = useDataStore();
+  const { role, user, canEditContent, canPublishContent } = useAuth();
   const topic = getTopicById(content.topicId);
   
   // Check if content has images
@@ -85,15 +90,66 @@ export function ContentCard({ content, showTopic = true }: ContentCardProps) {
           <span>{content.copyCount} lượt sao chép</span>
         </div>
         
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleCopy}
-          className="h-8 px-3 gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
-        >
-          <Copy className="h-3.5 w-3.5" />
-          Sao chép
-        </Button>
+        <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+          {/* Copy - ALL roles */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleCopy}
+            className="h-8 px-3 gap-1.5"
+          >
+            <Copy className="h-3.5 w-3.5" />
+            Sao chép
+          </Button>
+          
+          {/* Edit - Admin OR (Editor AND owner) */}
+          {canEditContent(content.ownerId || null) && onEdit && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onEdit(content);
+              }}
+              className="h-8 px-2"
+            >
+              <Pencil className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          
+          {/* Delete - Admin ONLY */}
+          {role === 'admin' && onDelete && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onDelete(content);
+              }}
+              className="h-8 px-2 text-destructive hover:text-destructive"
+            >
+              <Trash2 className="h-3.5 w-3.5" />
+            </Button>
+          )}
+          
+          {/* Publish - Admin ONLY */}
+          {canPublishContent() && content.status === 'draft' && onPublish && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                onPublish(content);
+              }}
+              className="h-8 px-2 text-green-600 hover:text-green-600"
+            >
+              <CheckCircle className="h-3.5 w-3.5" />
+            </Button>
+          )}
+        </div>
       </div>
     </Link>
   );

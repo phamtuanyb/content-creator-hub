@@ -1,14 +1,17 @@
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/lib/dataStore';
+import { useAuth } from '@/lib/auth';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image } from 'lucide-react';
+import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2 } from 'lucide-react';
 
 export function ContentDetailPage() {
   const { id } = useParams();
+  const navigate = useNavigate();
   const { toast } = useToast();
-  const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images } = useDataStore();
+  const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images, updateContent, deleteImage } = useDataStore();
+  const { role, user, canEditContent, canPublishContent } = useAuth();
   
   const content = getContentById(id || '');
   const topic = content ? getTopicById(content.topicId) : null;
@@ -17,7 +20,19 @@ export function ContentDetailPage() {
   // Tìm ảnh liên quan đến content này
   const contentImages = images.filter(img => img.contentId === id);
 
-  if (!content || content.status !== 'published') {
+  // Check permissions
+  const canEdit = content ? canEditContent(content.ownerId || null) : false;
+  const canPublish = canPublishContent();
+  const isAdmin = role === 'admin';
+
+  // Cho phép xem content nếu là owner hoặc admin, hoặc đã published
+  const canViewContent = content && (
+    content.status === 'published' || 
+    canEdit || 
+    isAdmin
+  );
+
+  if (!content || !canViewContent) {
     return (
       <div className="text-center py-12">
         <h2 className="text-xl font-semibold">Không tìm thấy nội dung</h2>
@@ -96,9 +111,43 @@ export function ContentDetailPage() {
 
       {/* Header */}
       <div className="rounded-xl bg-card border border-border p-6">
-        <div className="flex flex-wrap items-center gap-2 mb-4">
-          {topic && <Badge variant="primary">{topic.nameVi}</Badge>}
-          {sw && <Badge variant="info">{sw.name}</Badge>}
+        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div className="flex flex-wrap items-center gap-2">
+            {topic && <Badge variant="primary">{topic.nameVi}</Badge>}
+            {sw && <Badge variant="info">{sw.name}</Badge>}
+          </div>
+          
+          {/* Role-based action buttons */}
+          <div className="flex items-center gap-2">
+            {/* Edit - Admin OR (Editor AND owner) */}
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => navigate(`/admin/content?edit=${content.id}`)}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Chỉnh sửa
+              </Button>
+            )}
+            
+            {/* Publish - Admin ONLY */}
+            {canPublish && content.status === 'draft' && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  updateContent(content.id, { status: 'published' });
+                  toast({ title: 'Đã xuất bản', description: 'Nội dung đã được xuất bản' });
+                }}
+                className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
+              >
+                <CheckCircle className="h-4 w-4" />
+                Xuất bản
+              </Button>
+            )}
+          </div>
         </div>
         
         <h1 className="text-2xl font-bold mb-2">{content.title}</h1>
@@ -226,15 +275,7 @@ export function ContentDetailPage() {
                       <p className="text-xs text-muted-foreground">{img.description}</p>
                     )}
                     <div className="flex gap-2">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => handleCopyImage(img.url)}
-                        className="flex-1 gap-2"
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                        Sao chép ảnh
-                      </Button>
+                      {/* Download - ALL roles */}
                       <Button
                         variant="outline"
                         size="sm"
@@ -244,6 +285,20 @@ export function ContentDetailPage() {
                         <Download className="h-3.5 w-3.5" />
                         Tải xuống
                       </Button>
+                      {/* Delete Image - Admin ONLY */}
+                      {isAdmin && (
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          onClick={() => {
+                            deleteImage(img.id);
+                            toast({ title: 'Đã xóa', description: 'Ảnh đã được xóa' });
+                          }}
+                          className="gap-2 text-destructive border-destructive hover:bg-destructive/10"
+                        >
+                          <Trash2 className="h-3.5 w-3.5" />
+                        </Button>
+                      )}
                     </div>
                   </div>
                 ))}
