@@ -4,8 +4,10 @@ import { ContentCard } from '@/components/cards/ContentCard';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, TrendingUp, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
+import { useI18n } from '@/lib/i18n';
 
 export function HomePage() {
+  const { t } = useI18n();
   const featuredTopic = topics[0];
   const otherTopics = topics.slice(1);
   const popularContents = [...contents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
@@ -22,20 +24,20 @@ export function HomePage() {
         <div className="relative max-w-2xl">
           <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-primary-foreground/20 text-sm font-medium mb-4">
             <Sparkles className="h-4 w-4" />
-            Content Library
+            {t('home.hero.title')}
           </div>
           
           <h1 className="text-3xl lg:text-4xl font-bold mb-4">
-            Supercharge Your Sales with Ready-to-Use Content
+            {t('home.hero.title')} <span className="text-primary-foreground/80">{t('home.hero.subtitle')}</span>
           </h1>
           <p className="text-lg opacity-90 mb-6">
-            Access hundreds of proven content templates for sales, customer care, and marketing. Copy, customize, and convert.
+            {t('home.hero.description')}
           </p>
           
           <div className="flex flex-wrap gap-3">
             <Button variant="glass" size="lg" className="gap-2" asChild>
               <Link to="/topics">
-                Browse All Topics
+                {t('home.hero.explore')}
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
@@ -63,9 +65,9 @@ export function HomePage() {
       {/* More Topics */}
       <section>
         <div className="flex items-center justify-between mb-5">
-          <h2 className="text-xl font-semibold">All Categories</h2>
+          <h2 className="text-xl font-semibold">{t('home.topics.title')}</h2>
           <Link to="/topics" className="text-sm text-primary font-medium hover:underline">
-            View all
+            {t('common.view_all')}
           </Link>
         </div>
         <div className="grid sm:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -79,7 +81,7 @@ export function HomePage() {
       <section>
         <div className="flex items-center gap-2 mb-5">
           <TrendingUp className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Most Copied</h2>
+          <h2 className="text-xl font-semibold">{t('home.popular.title')}</h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           {popularContents.map((content) => (
@@ -92,7 +94,7 @@ export function HomePage() {
       <section>
         <div className="flex items-center gap-2 mb-5">
           <Clock className="h-5 w-5 text-primary" />
-          <h2 className="text-xl font-semibold">Recently Added</h2>
+          <h2 className="text-xl font-semibold">{t('home.recent.title')}</h2>
         </div>
         <div className="grid sm:grid-cols-2 gap-4">
           {recentContents.map((content) => (

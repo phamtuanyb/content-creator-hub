@@ -5,6 +5,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { Lock, Mail } from 'lucide-react';
+import { useI18n } from '@/lib/i18n';
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -12,6 +14,7 @@ export function AdminLoginPage() {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { t } = useI18n();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,18 +42,22 @@ export function AdminLoginPage() {
 
   return (
     <div className="min-h-screen bg-background flex items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher />
+      </div>
+      
       <div className="w-full max-w-md">
         <div className="text-center mb-8">
           <h1 className="text-2xl font-bold mb-2">
             <span className="text-primary">MKT</span> Admin
           </h1>
-          <p className="text-muted-foreground">Sign in to manage your content</p>
+          <p className="text-muted-foreground">{t('admin.login.title')}</p>
         </div>
 
         <div className="rounded-2xl bg-card border border-border p-8 shadow-lg">
           <form onSubmit={handleLogin} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email">{t('admin.login.email')}</Label>
               <div className="relative">
                 <Mail className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -66,7 +73,7 @@ export function AdminLoginPage() {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
+              <Label htmlFor="password">{t('admin.login.password')}</Label>
               <div className="relative">
                 <Lock className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input
@@ -82,12 +89,12 @@ export function AdminLoginPage() {
             </div>
 
             <Button type="submit" className="w-full" size="lg" disabled={loading}>
-              {loading ? 'Signing in...' : 'Sign In'}
+              {loading ? '...' : t('admin.login.submit')}
             </Button>
           </form>
 
           <p className="text-center text-sm text-muted-foreground mt-6">
-            Demo: admin@mkt.com / admin
+            {t('admin.login.demo')}
           </p>
         </div>
       </div>

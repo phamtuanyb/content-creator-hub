@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { I18nProvider } from "@/lib/i18n";
 
 // Layouts
 import { UserLayout } from "@/components/layout/UserLayout";
@@ -27,40 +28,42 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <Routes>
-          {/* Redirect root to home */}
-          <Route path="/" element={<Navigate to="/home" replace />} />
-          
-          {/* User Routes */}
-          <Route element={<UserLayout />}>
-            <Route path="/home" element={<HomePage />} />
-            <Route path="/topics" element={<HomePage />} />
-            <Route path="/topic/:id" element={<TopicDetailPage />} />
-            <Route path="/content/:id" element={<ContentDetailPage />} />
-            <Route path="/community" element={<HomePage />} />
-          </Route>
+    <I18nProvider>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <Routes>
+            {/* Redirect root to home */}
+            <Route path="/" element={<Navigate to="/home" replace />} />
+            
+            {/* User Routes */}
+            <Route element={<UserLayout />}>
+              <Route path="/home" element={<HomePage />} />
+              <Route path="/topics" element={<HomePage />} />
+              <Route path="/topic/:id" element={<TopicDetailPage />} />
+              <Route path="/content/:id" element={<ContentDetailPage />} />
+              <Route path="/community" element={<HomePage />} />
+            </Route>
 
-          {/* Admin Routes */}
-          <Route path="/admin/login" element={<AdminLoginPage />} />
-          <Route path="/admin" element={<AdminLayout />}>
-            <Route index element={<AdminDashboardPage />} />
-            <Route path="topics" element={<AdminTopicsPage />} />
-            <Route path="content" element={<AdminContentPage />} />
-            <Route path="software" element={<AdminSoftwarePage />} />
-            <Route path="images" element={<AdminImagesPage />} />
-            <Route path="analytics" element={<AdminDashboardPage />} />
-            <Route path="settings" element={<AdminDashboardPage />} />
-          </Route>
+            {/* Admin Routes */}
+            <Route path="/admin/login" element={<AdminLoginPage />} />
+            <Route path="/admin" element={<AdminLayout />}>
+              <Route index element={<AdminDashboardPage />} />
+              <Route path="topics" element={<AdminTopicsPage />} />
+              <Route path="content" element={<AdminContentPage />} />
+              <Route path="software" element={<AdminSoftwarePage />} />
+              <Route path="images" element={<AdminImagesPage />} />
+              <Route path="analytics" element={<AdminDashboardPage />} />
+              <Route path="settings" element={<AdminDashboardPage />} />
+            </Route>
 
-          {/* 404 */}
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
-    </TooltipProvider>
+            {/* 404 */}
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </TooltipProvider>
+    </I18nProvider>
   </QueryClientProvider>
 );
 
