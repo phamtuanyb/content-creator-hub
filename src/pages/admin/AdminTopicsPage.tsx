@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { topics as initialTopics, Topic } from '@/lib/mockData';
+import { useDataStore, Topic } from '@/lib/dataStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
@@ -35,7 +35,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Plus, Pencil, Trash2 } from 'lucide-react';
 
 export function AdminTopicsPage() {
-  const [topics, setTopics] = useState<Topic[]>(initialTopics);
+  const { topics, addTopic, updateTopic, deleteTopic } = useDataStore();
   const [editingTopic, setEditingTopic] = useState<Topic | null>(null);
   const [deletingTopic, setDeletingTopic] = useState<Topic | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
@@ -65,24 +65,29 @@ export function AdminTopicsPage() {
   };
 
   const handleSave = () => {
+    if (!formData.name.trim() || !formData.nameVi.trim()) {
+      toast({ title: 'Lỗi', description: 'Vui lòng điền đầy đủ tên chủ đề', variant: 'destructive' });
+      return;
+    }
+
     if (editingTopic) {
-      setTopics(topics.map(t =>
-        t.id === editingTopic.id
-          ? { ...t, ...formData, status: formData.status ? 'active' : 'hidden' }
-          : t
-      ));
-      toast({ title: 'Topic updated', description: 'Changes saved successfully' });
+      updateTopic(editingTopic.id, {
+        name: formData.name,
+        nameVi: formData.nameVi,
+        description: formData.description,
+        status: formData.status ? 'active' : 'hidden',
+      });
+      toast({ title: 'Đã cập nhật', description: 'Chủ đề đã được cập nhật thành công' });
     } else {
-      const newTopic: Topic = {
-        id: String(Date.now()),
-        ...formData,
+      addTopic({
+        name: formData.name,
+        nameVi: formData.nameVi,
+        description: formData.description,
         status: formData.status ? 'active' : 'hidden',
         icon: 'LayoutGrid',
-        contentCount: 0,
         color: 'primary',
-      };
-      setTopics([...topics, newTopic]);
-      toast({ title: 'Topic created', description: 'New topic added successfully' });
+      });
+      toast({ title: 'Đã tạo mới', description: 'Chủ đề mới đã được thêm thành công' });
     }
     setIsDialogOpen(false);
     resetForm();
@@ -90,8 +95,8 @@ export function AdminTopicsPage() {
 
   const handleDelete = () => {
     if (deletingTopic) {
-      setTopics(topics.filter(t => t.id !== deletingTopic.id));
-      toast({ title: 'Topic deleted', description: 'Topic has been removed' });
+      deleteTopic(deletingTopic.id);
+      toast({ title: 'Đã xóa', description: 'Chủ đề đã được xóa khỏi hệ thống' });
       setDeletingTopic(null);
     }
   };
@@ -100,8 +105,8 @@ export function AdminTopicsPage() {
     <div className="space-y-6 animate-fade-in">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold mb-1">Manage Topics</h1>
-          <p className="text-muted-foreground">Create and organize content categories</p>
+          <h1 className="text-2xl font-bold mb-1">Quản lý Chủ đề</h1>
+          <p className="text-muted-foreground">Tạo và tổ chức các danh mục nội dung</p>
         </div>
         
         <Dialog open={isDialogOpen} onOpenChange={(open) => {
@@ -111,39 +116,39 @@ export function AdminTopicsPage() {
           <DialogTrigger asChild>
             <Button className="gap-2">
               <Plus className="h-4 w-4" />
-              Add Topic
+              Thêm Chủ đề
             </Button>
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{editingTopic ? 'Edit Topic' : 'Add New Topic'}</DialogTitle>
+              <DialogTitle>{editingTopic ? 'Sửa Chủ đề' : 'Thêm Chủ đề mới'}</DialogTitle>
             </DialogHeader>
             
             <div className="space-y-4 py-4">
               <div className="space-y-2">
-                <Label>Topic Name (English)</Label>
+                <Label>Tên Chủ đề (Tiếng Anh)</Label>
                 <Input
                   value={formData.name}
                   onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                  placeholder="e.g., Sales Content"
+                  placeholder="VD: Sales Content"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Topic Name (Vietnamese)</Label>
+                <Label>Tên Chủ đề (Tiếng Việt)</Label>
                 <Input
                   value={formData.nameVi}
                   onChange={(e) => setFormData({ ...formData, nameVi: e.target.value })}
-                  placeholder="e.g., Content Bán Hàng"
+                  placeholder="VD: Content Bán Hàng"
                 />
               </div>
               
               <div className="space-y-2">
-                <Label>Description</Label>
+                <Label>Mô tả</Label>
                 <Textarea
                   value={formData.description}
                   onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-                  placeholder="Brief description of this topic..."
+                  placeholder="Mô tả ngắn về chủ đề này..."
                   rows={3}
                 />
               </div>
@@ -153,13 +158,13 @@ export function AdminTopicsPage() {
                   checked={formData.status}
                   onCheckedChange={(checked) => setFormData({ ...formData, status: checked })}
                 />
-                <Label>Active</Label>
+                <Label>Kích hoạt</Label>
               </div>
             </div>
             
             <div className="flex justify-end gap-2">
-              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Cancel</Button>
-              <Button onClick={handleSave}>Save</Button>
+              <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
+              <Button onClick={handleSave}>Lưu</Button>
             </div>
           </DialogContent>
         </Dialog>
@@ -169,36 +174,44 @@ export function AdminTopicsPage() {
         <Table>
           <TableHeader>
             <TableRow>
-              <TableHead>Topic Name</TableHead>
-              <TableHead>Vietnamese Name</TableHead>
-              <TableHead>Contents</TableHead>
-              <TableHead>Status</TableHead>
-              <TableHead className="text-right">Actions</TableHead>
+              <TableHead>Tên Chủ đề</TableHead>
+              <TableHead>Tên Tiếng Việt</TableHead>
+              <TableHead>Số nội dung</TableHead>
+              <TableHead>Trạng thái</TableHead>
+              <TableHead className="text-right">Thao tác</TableHead>
             </TableRow>
           </TableHeader>
           <TableBody>
-            {topics.map((topic) => (
-              <TableRow key={topic.id}>
-                <TableCell className="font-medium">{topic.name}</TableCell>
-                <TableCell>{topic.nameVi}</TableCell>
-                <TableCell>{topic.contentCount}</TableCell>
-                <TableCell>
-                  <Badge variant={topic.status === 'active' ? 'success' : 'secondary'}>
-                    {topic.status}
-                  </Badge>
-                </TableCell>
-                <TableCell className="text-right">
-                  <div className="flex justify-end gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => openEditDialog(topic)}>
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => setDeletingTopic(topic)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
-                  </div>
+            {topics.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
+                  Chưa có chủ đề nào. Nhấn "Thêm Chủ đề" để bắt đầu.
                 </TableCell>
               </TableRow>
-            ))}
+            ) : (
+              topics.map((topic) => (
+                <TableRow key={topic.id}>
+                  <TableCell className="font-medium">{topic.name}</TableCell>
+                  <TableCell>{topic.nameVi}</TableCell>
+                  <TableCell>{topic.contentCount}</TableCell>
+                  <TableCell>
+                    <Badge variant={topic.status === 'active' ? 'success' : 'secondary'}>
+                      {topic.status === 'active' ? 'Hoạt động' : 'Ẩn'}
+                    </Badge>
+                  </TableCell>
+                  <TableCell className="text-right">
+                    <div className="flex justify-end gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => openEditDialog(topic)}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => setDeletingTopic(topic)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                    </div>
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
           </TableBody>
         </Table>
       </div>
@@ -206,15 +219,15 @@ export function AdminTopicsPage() {
       <AlertDialog open={!!deletingTopic} onOpenChange={() => setDeletingTopic(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
-            <AlertDialogTitle>Delete Topic</AlertDialogTitle>
+            <AlertDialogTitle>Xóa Chủ đề</AlertDialogTitle>
             <AlertDialogDescription>
-              Are you sure you want to delete "{deletingTopic?.name}"? This action cannot be undone.
+              Bạn có chắc chắn muốn xóa "{deletingTopic?.nameVi}"? Hành động này không thể hoàn tác.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogCancel>Hủy</AlertDialogCancel>
             <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
-              Delete
+              Xóa
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>
