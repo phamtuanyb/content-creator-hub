@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, Settings, User } from 'lucide-react';
+import { Bell, Search, LogOut, Settings, User, FileText, Library, PenSquare } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,22 +7,17 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import LanguageSwitcher from '@/components/LanguageSwitcher';
+
 export function UserHeader() {
-  const {
-    t
-  } = useI18n();
-  const {
-    user,
-    profile,
-    role,
-    signOut,
-    canAccessAdmin
-  } = useAuth();
+  const { t } = useI18n();
+  const { user, profile, role, signOut, canAccessAdmin } = useAuth();
   const navigate = useNavigate();
+
   const handleLogout = async () => {
     await signOut();
     navigate('/auth');
   };
+
   const getInitials = () => {
     if (profile?.full_name) {
       return profile.full_name.split(' ').map(n => n[0]).join('').slice(0, 2).toUpperCase();
@@ -32,7 +27,9 @@ export function UserHeader() {
     }
     return 'U';
   };
-  return <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
+
+  return (
+    <header className="sticky top-0 z-50 w-full border-b border-border bg-card/95 backdrop-blur supports-[backdrop-filter]:bg-card/60">
       <div className="flex h-16 items-center justify-between px-6">
         <div className="flex items-center gap-8">
           <Link to="/" className="flex items-center gap-2">
@@ -85,14 +82,43 @@ export function UserHeader() {
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
-              {canAccessAdmin() && <DropdownMenuItem onClick={() => navigate('/admin')}>
+              
+              {/* Common items for all roles */}
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Cài đặt hồ sơ
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Role-specific items */}
+              {canAccessAdmin() && (
+                <DropdownMenuItem onClick={() => navigate('/admin')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Admin Panel
-                </DropdownMenuItem>}
-              {role === 'editor' && <DropdownMenuItem onClick={() => navigate('/editor/content')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Editor Panel
-                </DropdownMenuItem>}
+                </DropdownMenuItem>
+              )}
+              
+              {role === 'editor' && (
+                <>
+                  <DropdownMenuItem onClick={() => navigate('/editor/my-content')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    Nội dung của tôi
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/editor/create')}>
+                    <PenSquare className="mr-2 h-4 w-4" />
+                    Tạo nội dung
+                  </DropdownMenuItem>
+                </>
+              )}
+              
+              {role === 'sales' && (
+                <DropdownMenuItem onClick={() => navigate('/sales/content')}>
+                  <Library className="mr-2 h-4 w-4" />
+                  Thư viện nội dung
+                </DropdownMenuItem>
+              )}
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
@@ -102,5 +128,6 @@ export function UserHeader() {
           </DropdownMenu>
         </div>
       </div>
-    </header>;
+    </header>
+  );
 }
