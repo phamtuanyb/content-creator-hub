@@ -1,6 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
 import { topics } from '@/lib/mockData';
+import { useI18n } from '@/lib/i18n';
 import {
   ShoppingCart,
   HeartHandshake,
@@ -26,15 +27,28 @@ const iconMap: Record<string, React.ElementType> = {
   Boxes,
 };
 
+const topicTranslationKeys: Record<string, string> = {
+  'sales': 'topic.sales',
+  'customer-care': 'topic.customer_care',
+  'seeding': 'topic.seeding',
+  'personal-brand': 'topic.personal_brand',
+  'feedback': 'topic.feedback',
+  'promotion': 'topic.promotion',
+  'emotion': 'topic.emotion',
+  'industry': 'topic.industry',
+  'software': 'topic.software',
+};
+
 export function UserSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useI18n();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-[calc(100vh-64px)] sticky top-16">
       <div className="p-4">
         <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-3">
-          Categories
+          {t('nav.topics')}
         </h3>
         
         <nav className="space-y-1">
@@ -48,12 +62,13 @@ export function UserSidebar() {
             )}
           >
             <LayoutGrid className="h-4 w-4" />
-            All Content
+            {t('topic.filter.all')}
           </Link>
           
           {topics.map((topic) => {
             const Icon = iconMap[topic.icon] || LayoutGrid;
             const isActive = currentPath === `/topic/${topic.id}`;
+            const translationKey = topicTranslationKeys[topic.id];
             
             return (
               <Link
@@ -67,7 +82,7 @@ export function UserSidebar() {
                 )}
               >
                 <Icon className="h-4 w-4" />
-                <span className="truncate">{topic.name}</span>
+                <span className="truncate">{translationKey ? t(translationKey) : topic.name}</span>
               </Link>
             );
           })}

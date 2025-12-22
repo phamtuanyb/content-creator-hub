@@ -1,5 +1,6 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
+import { useI18n } from '@/lib/i18n';
 import {
   LayoutDashboard,
   FolderTree,
@@ -12,20 +13,22 @@ import {
   ChevronLeft,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-
-const menuItems = [
-  { icon: LayoutDashboard, label: 'Dashboard', path: '/admin' },
-  { icon: FolderTree, label: 'Manage Topics', path: '/admin/topics' },
-  { icon: FileText, label: 'Manage Content', path: '/admin/content' },
-  { icon: Image, label: 'Manage Images', path: '/admin/images' },
-  { icon: Boxes, label: 'Manage Software', path: '/admin/software' },
-  { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
-  { icon: Settings, label: 'Settings', path: '/admin/settings' },
-];
+import LanguageSwitcher from '@/components/LanguageSwitcher';
 
 export function AdminSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
+  const { t } = useI18n();
+
+  const menuItems = [
+    { icon: LayoutDashboard, label: t('admin.sidebar.dashboard'), path: '/admin' },
+    { icon: FolderTree, label: t('admin.sidebar.topics'), path: '/admin/topics' },
+    { icon: FileText, label: t('admin.sidebar.content'), path: '/admin/content' },
+    { icon: Image, label: t('admin.sidebar.images'), path: '/admin/images' },
+    { icon: Boxes, label: t('admin.sidebar.software'), path: '/admin/software' },
+    { icon: BarChart3, label: 'Analytics', path: '/admin/analytics' },
+    { icon: Settings, label: 'Settings', path: '/admin/settings' },
+  ];
 
   return (
     <aside className="flex flex-col w-64 border-r border-border bg-card h-screen sticky top-0">
@@ -62,16 +65,19 @@ export function AdminSidebar() {
       </nav>
 
       <div className="p-4 border-t border-border space-y-2">
+        <div className="flex justify-center mb-2">
+          <LanguageSwitcher />
+        </div>
         <Link to="/">
           <Button variant="outline" className="w-full justify-start gap-2">
             <ChevronLeft className="h-4 w-4" />
-            Back to User View
+            {t('nav.home')}
           </Button>
         </Link>
         <Link to="/admin/login">
           <Button variant="ghost" className="w-full justify-start gap-2 text-muted-foreground">
             <LogOut className="h-4 w-4" />
-            Logout
+            {t('admin.sidebar.logout')}
           </Button>
         </Link>
       </div>
