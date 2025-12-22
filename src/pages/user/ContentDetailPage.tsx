@@ -1,6 +1,7 @@
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -12,6 +13,7 @@ export function ContentDetailPage() {
   const { toast } = useToast();
   const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images, updateContent, deleteImage } = useDataStore();
   const { role, user, canEditContent, canPublishContent } = useAuth();
+  const { buildCopyText } = useUserProfile();
   
   const content = getContentById(id || '');
   const topic = content ? getTopicById(content.topicId) : null;
@@ -40,12 +42,13 @@ export function ContentDetailPage() {
     );
   }
 
-  const handleCopy = (text: string, label: string) => {
-    navigator.clipboard.writeText(text);
+  const handleCopy = (text: string, label: string, withHotline: boolean = false) => {
+    const textToCopy = withHotline ? buildCopyText(text) : text;
+    navigator.clipboard.writeText(textToCopy);
     incrementCopyCount(content.id);
     toast({
       title: "Đã sao chép!",
-      description: `${label} đã được sao chép`,
+      description: withHotline ? `${label} kèm hotline đã được sao chép` : `${label} đã được sao chép`,
     });
   };
 
@@ -171,10 +174,16 @@ export function ContentDetailPage() {
           <div className="rounded-xl bg-card border border-border p-6">
             <div className="flex items-center justify-between mb-4">
               <h2 className="font-semibold">Nội dung</h2>
-              <Button onClick={() => handleCopy(content.body, 'Nội dung')} className="gap-2">
-                <Copy className="h-4 w-4" />
-                Sao chép văn bản
-              </Button>
+              <div className="flex gap-2">
+                <Button onClick={() => handleCopy(content.body, 'Nội dung', true)} className="gap-2">
+                  <Copy className="h-4 w-4" />
+                  Sao chép kèm hotline
+                </Button>
+                <Button variant="outline" onClick={() => handleCopy(content.body, 'Nội dung', false)} className="gap-2">
+                  <Copy className="h-4 w-4" />
+                  Không hotline
+                </Button>
+              </div>
             </div>
             
             <div className="bg-secondary/50 rounded-lg p-4 whitespace-pre-line text-sm leading-relaxed">
@@ -349,15 +358,26 @@ export function ContentDetailPage() {
             <h2 className="font-semibold mb-4">Sao chép nhanh</h2>
             <div className="space-y-2">
               <Button
+                variant="default"
+                className="w-full gap-2"
+                onClick={() => {
+                  const fullContent = `${content.body}\n\n${content.hashtags.join(' ')}${content.cta ? `\n\n${content.cta}` : ''}`;
+                  handleCopy(fullContent, 'Toàn bộ nội dung', true);
+                }}
+              >
+                <Copy className="h-4 w-4" />
+                Sao chép tất cả (kèm hotline)
+              </Button>
+              <Button
                 variant="secondary"
                 className="w-full gap-2"
                 onClick={() => {
                   const fullContent = `${content.body}\n\n${content.hashtags.join(' ')}${content.cta ? `\n\n${content.cta}` : ''}`;
-                  handleCopy(fullContent, 'Toàn bộ nội dung');
+                  handleCopy(fullContent, 'Toàn bộ nội dung', false);
                 }}
               >
                 <Copy className="h-4 w-4" />
-                Sao chép tất cả (Text + Hashtag)
+                Sao chép không hotline
               </Button>
             </div>
           </div>

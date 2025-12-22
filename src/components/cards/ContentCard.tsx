@@ -1,6 +1,7 @@
 import { Link } from 'react-router-dom';
 import { useDataStore, Content } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
+import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Copy, Image as ImageIcon, Pencil, Trash2, CheckCircle } from 'lucide-react';
@@ -18,20 +19,24 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
   const { toast } = useToast();
   const { getTopicById, incrementCopyCount, images } = useDataStore();
   const { role, user, canEditContent, canPublishContent } = useAuth();
+  const { buildCopyText } = useUserProfile();
   const topic = getTopicById(content.topicId);
   
   // Check if content has images
   const contentImages = images.filter(img => img.contentId === content.id);
   const hasImage = contentImages.length > 0 || !!content.imageUrl;
 
-  const handleCopy = (e: React.MouseEvent) => {
+  const handleCopy = (e: React.MouseEvent, withHotline: boolean = true) => {
     e.preventDefault();
     e.stopPropagation();
-    navigator.clipboard.writeText(content.body);
+    
+    const textToCopy = withHotline ? buildCopyText(content.body) : content.body;
+    navigator.clipboard.writeText(textToCopy);
     incrementCopyCount(content.id);
+    
     toast({
       title: "Đã sao chép!",
-      description: "Nội dung đã được sao chép vào clipboard",
+      description: withHotline ? "Nội dung kèm hotline đã được sao chép" : "Nội dung đã được sao chép",
     });
   };
 
@@ -91,15 +96,26 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
         </div>
         
         <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-          {/* Copy - ALL roles */}
+          {/* Copy with hotline - ALL roles */}
           <Button
             variant="ghost"
             size="sm"
-            onClick={handleCopy}
+            onClick={(e) => handleCopy(e, true)}
             className="h-8 px-3 gap-1.5"
           >
             <Copy className="h-3.5 w-3.5" />
             Sao chép
+          </Button>
+          
+          {/* Copy without hotline - ALL roles */}
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={(e) => handleCopy(e, false)}
+            className="h-8 px-2 text-muted-foreground"
+            title="Sao chép không hotline"
+          >
+            <Copy className="h-3.5 w-3.5" />
           </Button>
           
           {/* Edit - Admin OR (Editor AND owner) */}

@@ -17,6 +17,7 @@ import { SalesLayout } from "@/components/layout/SalesLayout";
 import { HomePage } from "@/pages/user/HomePage";
 import { TopicDetailPage } from "@/pages/user/TopicDetailPage";
 import { ContentDetailPage } from "@/pages/user/ContentDetailPage";
+import { ProfileSettingsPage } from "@/pages/user/ProfileSettingsPage";
 
 // Admin Pages
 import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
@@ -70,6 +71,7 @@ const App = () => (
                 <Route path="/topic/:id" element={<TopicDetailPage />} />
                 <Route path="/content/:id" element={<ContentDetailPage />} />
                 <Route path="/community" element={<HomePage />} />
+                <Route path="/profile" element={<ProfileSettingsPage />} />
               </Route>
 
               {/* Admin Routes - Only Admin can access */}

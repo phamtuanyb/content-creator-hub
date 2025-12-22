@@ -52,7 +52,7 @@ export function HomePage() {
             <TopicCard topic={featuredTopic} featured />
           </div>
           <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
-            {otherTopics.slice(0, 4).map(topic => {})}
+            {otherTopics.slice(0, 4).map(topic => <TopicCard key={topic.id} topic={topic} />)}
           </div>
         </div>
       </section>
