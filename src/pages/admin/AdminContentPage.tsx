@@ -286,12 +286,12 @@ export function AdminContentPage() {
 
               <div className="space-y-2">
                 <Label>Software (optional)</Label>
-                <Select value={formData.softwareId} onValueChange={(v) => setFormData({ ...formData, softwareId: v })}>
+                <Select value={formData.softwareId || "none"} onValueChange={(v) => setFormData({ ...formData, softwareId: v === "none" ? "" : v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Select software" />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None</SelectItem>
+                    <SelectItem value="none">None</SelectItem>
                     {software.map(s => (
                       <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
                     ))}
