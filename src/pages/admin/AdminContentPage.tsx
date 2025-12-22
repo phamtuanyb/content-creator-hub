@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useDataStore, Content } from '@/lib/dataStore';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -39,17 +39,18 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Upload, X, Image } from 'lucide-react';
 
 const platforms = ['Facebook', 'Zalo', 'Group', 'Instagram', 'TikTok'];
 const purposes = ['Giới thiệu', 'Chốt sale', 'Seeding', 'Chăm sóc', 'Khuyến mãi'];
 
 export function AdminContentPage() {
-  const { contents, topics, software, addContent, updateContent, deleteContent, getTopicById } = useDataStore();
+  const { contents, topics, software, addContent, updateContent, deleteContent, getTopicById, addImage, images, deleteImage } = useDataStore();
   const [editingContent, setEditingContent] = useState<Content | null>(null);
   const [deletingContent, setDeletingContent] = useState<Content | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
@@ -62,7 +63,11 @@ export function AdminContentPage() {
     purpose: '',
     status: true,
     aiImagePrompt: '',
+    imageUrl: '',
+    imageDescription: '',
   });
+
+  const [uploadedImages, setUploadedImages] = useState<{ url: string; description: string }[]>([]);
 
   const resetForm = () => {
     setFormData({
@@ -76,12 +81,19 @@ export function AdminContentPage() {
       purpose: '',
       status: true,
       aiImagePrompt: '',
+      imageUrl: '',
+      imageDescription: '',
     });
+    setUploadedImages([]);
     setEditingContent(null);
   };
 
   const openEditDialog = (content: Content) => {
     setEditingContent(content);
+    // Load existing images for this content
+    const existingImages = images.filter(img => img.contentId === content.id);
+    setUploadedImages(existingImages.map(img => ({ url: img.url, description: img.description || '' })));
+    
     setFormData({
       title: content.title,
       body: content.body,
@@ -93,8 +105,38 @@ export function AdminContentPage() {
       purpose: content.purpose,
       status: content.status === 'published',
       aiImagePrompt: content.aiImagePrompt || '',
+      imageUrl: content.imageUrl || '',
+      imageDescription: content.imageDescription || '',
     });
     setIsDialogOpen(true);
+  };
+
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (files) {
+      Array.from(files).forEach(file => {
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          if (event.target?.result) {
+            setUploadedImages(prev => [...prev, { 
+              url: event.target!.result as string, 
+              description: '' 
+            }]);
+          }
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  const removeUploadedImage = (index: number) => {
+    setUploadedImages(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const updateImageDescription = (index: number, description: string) => {
+    setUploadedImages(prev => prev.map((img, i) => 
+      i === index ? { ...img, description } : img
+    ));
   };
 
   const handleSave = (asDraft: boolean = false) => {
@@ -114,6 +156,8 @@ export function AdminContentPage() {
     const hashtags = formData.hashtags.split(',').map(h => h.trim()).filter(Boolean);
     const status = asDraft ? 'draft' : (formData.status ? 'published' : 'draft');
     
+    let contentId = editingContent?.id || '';
+    
     if (editingContent) {
       updateContent(editingContent.id, {
         title: formData.title,
@@ -126,9 +170,18 @@ export function AdminContentPage() {
         purpose: formData.purpose,
         status,
         aiImagePrompt: formData.aiImagePrompt,
+        imageUrl: uploadedImages[0]?.url || formData.imageUrl,
+        imageDescription: uploadedImages[0]?.description || formData.imageDescription,
       });
+      
+      // Remove old images and add new ones
+      const oldImages = images.filter(img => img.contentId === editingContent.id);
+      oldImages.forEach(img => deleteImage(img.id));
+      
       toast({ title: 'Đã cập nhật', description: 'Nội dung đã được cập nhật thành công' });
     } else {
+      // For new content, we'll create the content first
+      contentId = String(Date.now());
       addContent({
         title: formData.title,
         body: formData.body,
@@ -140,9 +193,22 @@ export function AdminContentPage() {
         purpose: formData.purpose,
         status,
         aiImagePrompt: formData.aiImagePrompt,
+        imageUrl: uploadedImages[0]?.url,
+        imageDescription: uploadedImages[0]?.description,
       });
       toast({ title: 'Đã tạo mới', description: 'Nội dung mới đã được thêm thành công' });
     }
+
+    // Add uploaded images to store
+    uploadedImages.forEach(img => {
+      addImage({
+        url: img.url,
+        contentId: editingContent?.id || contentId,
+        contentTitle: formData.title,
+        description: img.description,
+      });
+    });
+
     setIsDialogOpen(false);
     resetForm();
   };
@@ -363,6 +429,62 @@ export function AdminContentPage() {
                   placeholder="Mô tả hình ảnh để AI tạo..."
                   rows={3}
                 />
+              </div>
+
+              {/* Image Upload Section */}
+              <div className="space-y-2">
+                <Label className="flex items-center gap-2">
+                  <Image className="h-4 w-4" />
+                  Hình ảnh
+                </Label>
+                <input
+                  type="file"
+                  ref={fileInputRef}
+                  onChange={handleImageUpload}
+                  accept="image/*"
+                  multiple
+                  className="hidden"
+                />
+                <Button
+                  type="button"
+                  variant="outline"
+                  onClick={() => fileInputRef.current?.click()}
+                  className="w-full gap-2"
+                >
+                  <Upload className="h-4 w-4" />
+                  Tải lên hình ảnh
+                </Button>
+                
+                {uploadedImages.length > 0 && (
+                  <div className="space-y-3 mt-3">
+                    {uploadedImages.map((img, index) => (
+                      <div key={index} className="relative border border-border rounded-lg p-2">
+                        <div className="relative">
+                          <img
+                            src={img.url}
+                            alt={`Uploaded ${index + 1}`}
+                            className="w-full h-32 object-cover rounded"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute top-1 right-1 h-6 w-6"
+                            onClick={() => removeUploadedImage(index)}
+                          >
+                            <X className="h-3 w-3" />
+                          </Button>
+                        </div>
+                        <Input
+                          className="mt-2"
+                          placeholder="Mô tả hình ảnh..."
+                          value={img.description}
+                          onChange={(e) => updateImageDescription(index, e.target.value)}
+                        />
+                      </div>
+                    ))}
+                  </div>
+                )}
               </div>
 
               <div className="flex items-center gap-3">
