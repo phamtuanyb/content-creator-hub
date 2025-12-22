@@ -1,4 +1,4 @@
-import { Bell, Search, LogOut, Settings, User } from 'lucide-react';
+import { Bell, Search, LogOut, Settings, User, FileText, PenSquare, Library, Key } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -89,27 +89,55 @@ export function UserHeader() {
                 <div className="flex flex-col">
                   <span>{profile?.full_name || 'User'}</span>
                   <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
+                  {role && (
+                    <span className="text-xs text-primary font-medium capitalize mt-1">{role}</span>
+                  )}
                 </div>
               </DropdownMenuLabel>
               <DropdownMenuSeparator />
+              
+              {/* Common items for all roles */}
+              <DropdownMenuItem onClick={() => navigate('/profile')}>
+                <User className="mr-2 h-4 w-4" />
+                Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate('/change-password')}>
+                <Key className="mr-2 h-4 w-4" />
+                Change Password
+              </DropdownMenuItem>
+              
+              <DropdownMenuSeparator />
+              
+              {/* Admin-specific menu */}
               {role === 'admin' && (
                 <DropdownMenuItem onClick={() => navigate('/admin')}>
                   <Settings className="mr-2 h-4 w-4" />
                   Admin Dashboard
                 </DropdownMenuItem>
               )}
+              
+              {/* Editor-specific menu items */}
               {role === 'editor' && (
-                <DropdownMenuItem onClick={() => navigate('/editor/content')}>
-                  <User className="mr-2 h-4 w-4" />
-                  Editor Panel
-                </DropdownMenuItem>
+                <>
+                  <DropdownMenuItem onClick={() => navigate('/editor/my-content')}>
+                    <FileText className="mr-2 h-4 w-4" />
+                    My Content
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/editor/create')}>
+                    <PenSquare className="mr-2 h-4 w-4" />
+                    Create Content
+                  </DropdownMenuItem>
+                </>
               )}
+              
+              {/* Sales-specific menu items */}
               {role === 'sales' && (
-                <DropdownMenuItem onClick={() => navigate('/home')}>
-                  <User className="mr-2 h-4 w-4" />
+                <DropdownMenuItem onClick={() => navigate('/sales/library')}>
+                  <Library className="mr-2 h-4 w-4" />
                   Content Library
                 </DropdownMenuItem>
               )}
+              
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleLogout}>
                 <LogOut className="mr-2 h-4 w-4" />
