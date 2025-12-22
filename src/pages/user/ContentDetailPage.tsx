@@ -1,11 +1,14 @@
+import { useState } from 'react';
 import { useParams, Link, useNavigate } from 'react-router-dom';
 import { useDataStore } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
 import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2 } from 'lucide-react';
+import { LoginPromptModal } from '@/components/auth/LoginPromptModal';
 
 export function ContentDetailPage() {
   const { id } = useParams();
@@ -14,10 +17,14 @@ export function ContentDetailPage() {
   const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images, updateContent, deleteImage } = useDataStore();
   const { role, user, canEditContent, canPublishContent } = useAuth();
   const { buildCopyText } = useUserProfile();
+  const [showLoginModal, setShowLoginModal] = useState(false);
   
   const content = getContentById(id || '');
   const topic = content ? getTopicById(content.topicId) : null;
   const sw = content?.softwareId ? getSoftwareById(content.softwareId) : null;
+  
+  // Auth check
+  const isAuthenticated = !!user;
   
   // Tìm ảnh liên quan đến content này
   const contentImages = images.filter(img => img.contentId === id);
@@ -42,19 +49,32 @@ export function ContentDetailPage() {
     );
   }
 
+  const requireAuth = (action: () => void) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
+    action();
+  };
+
   const handleCopy = (text: string, label: string, withHotline: boolean = false) => {
-    const textToCopy = withHotline ? buildCopyText(text) : text;
-    navigator.clipboard.writeText(textToCopy);
-    incrementCopyCount(content.id);
-    toast({
-      title: "Đã sao chép!",
-      description: withHotline ? `${label} kèm hotline đã được sao chép` : `${label} đã được sao chép`,
+    requireAuth(() => {
+      const textToCopy = withHotline ? buildCopyText(text) : text;
+      navigator.clipboard.writeText(textToCopy);
+      incrementCopyCount(content.id);
+      toast({
+        title: "Đã sao chép!",
+        description: withHotline ? `${label} kèm hotline đã được sao chép` : `${label} đã được sao chép`,
+      });
     });
   };
 
   const handleCopyImage = async (imageUrl: string) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     try {
-      // Fetch image and copy to clipboard
       const response = await fetch(imageUrl);
       const blob = await response.blob();
       await navigator.clipboard.write([
@@ -67,7 +87,6 @@ export function ContentDetailPage() {
         description: "Ảnh đã được sao chép vào clipboard",
       });
     } catch (error) {
-      // Fallback: copy URL instead
       navigator.clipboard.writeText(imageUrl);
       toast({
         title: "Đã sao chép URL ảnh!",
@@ -77,6 +96,10 @@ export function ContentDetailPage() {
   };
 
   const handleDownloadImage = async (imageUrl: string, filename: string) => {
+    if (!isAuthenticated) {
+      setShowLoginModal(true);
+      return;
+    }
     try {
       const response = await fetch(imageUrl);
       const blob = await response.blob();
@@ -406,6 +429,8 @@ export function ContentDetailPage() {
           </div>
         </div>
       </div>
+      
+      <LoginPromptModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </div>
   );
 }

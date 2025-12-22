@@ -60,72 +60,80 @@ export function UserHeader() {
           
           <LanguageSwitcher />
           
-          <Button variant="ghost" size="icon" className="relative">
-            <Bell className="h-5 w-5" />
-            <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
-          </Button>
-          
-          <DropdownMenu>
-            <DropdownMenuTrigger asChild>
-              <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all">
-                <AvatarImage src="" />
-                <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
-                  {getInitials()}
-                </AvatarFallback>
-              </Avatar>
-            </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56">
-              <DropdownMenuLabel>
-                <div className="flex flex-col">
-                  <span>{profile?.full_name || 'User'}</span>
-                  <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
-                </div>
-              </DropdownMenuLabel>
-              <DropdownMenuSeparator />
+          {user ? (
+            <>
+              <Button variant="ghost" size="icon" className="relative">
+                <Bell className="h-5 w-5" />
+                <span className="absolute top-1 right-1 h-2 w-2 rounded-full bg-primary" />
+              </Button>
               
-              {/* Common items for all roles */}
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                Cài đặt hồ sơ
-              </DropdownMenuItem>
-              
-              <DropdownMenuSeparator />
-              
-              {/* Role-specific items */}
-              {canAccessAdmin() && (
-                <DropdownMenuItem onClick={() => navigate('/admin')}>
-                  <Settings className="mr-2 h-4 w-4" />
-                  Admin Panel
-                </DropdownMenuItem>
-              )}
-              
-              {role === 'editor' && (
-                <>
-                  <DropdownMenuItem onClick={() => navigate('/editor/my-content')}>
-                    <FileText className="mr-2 h-4 w-4" />
-                    Nội dung của tôi
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Avatar className="h-9 w-9 cursor-pointer ring-2 ring-transparent hover:ring-primary/20 transition-all">
+                    <AvatarImage src="" />
+                    <AvatarFallback className="bg-primary text-primary-foreground text-sm font-medium">
+                      {getInitials()}
+                    </AvatarFallback>
+                  </Avatar>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel>
+                    <div className="flex flex-col">
+                      <span>{profile?.full_name || 'User'}</span>
+                      <span className="text-xs text-muted-foreground font-normal">{user?.email}</span>
+                    </div>
+                  </DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  
+                  {/* Common items for all roles */}
+                  <DropdownMenuItem onClick={() => navigate('/profile')}>
+                    <User className="mr-2 h-4 w-4" />
+                    Cài đặt hồ sơ
                   </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/editor/create')}>
-                    <PenSquare className="mr-2 h-4 w-4" />
-                    Tạo nội dung
+                  
+                  <DropdownMenuSeparator />
+                  
+                  {/* Role-specific items */}
+                  {canAccessAdmin() && (
+                    <DropdownMenuItem onClick={() => navigate('/admin')}>
+                      <Settings className="mr-2 h-4 w-4" />
+                      Admin Panel
+                    </DropdownMenuItem>
+                  )}
+                  
+                  {role === 'editor' && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/editor/my-content')}>
+                        <FileText className="mr-2 h-4 w-4" />
+                        Nội dung của tôi
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/editor/create')}>
+                        <PenSquare className="mr-2 h-4 w-4" />
+                        Tạo nội dung
+                      </DropdownMenuItem>
+                    </>
+                  )}
+                  
+                  {role === 'sales' && (
+                    <DropdownMenuItem onClick={() => navigate('/sales/content')}>
+                      <Library className="mr-2 h-4 w-4" />
+                      Thư viện nội dung
+                    </DropdownMenuItem>
+                  )}
+                  
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem onClick={handleLogout}>
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Đăng xuất
                   </DropdownMenuItem>
-                </>
-              )}
-              
-              {role === 'sales' && (
-                <DropdownMenuItem onClick={() => navigate('/sales/content')}>
-                  <Library className="mr-2 h-4 w-4" />
-                  Thư viện nội dung
-                </DropdownMenuItem>
-              )}
-              
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={handleLogout}>
-                <LogOut className="mr-2 h-4 w-4" />
-                Đăng xuất
-              </DropdownMenuItem>
-            </DropdownMenuContent>
-          </DropdownMenu>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </>
+          ) : (
+            <Button onClick={() => navigate('/auth')} className="gap-2">
+              Đăng nhập
+            </Button>
+          )}
         </div>
       </div>
     </header>

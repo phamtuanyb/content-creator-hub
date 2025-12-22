@@ -5,15 +5,19 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, TrendingUp, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth';
+
 export function HomePage() {
-  const {
-    t
-  } = useI18n();
+  const { t } = useI18n();
+  const { canAccessAdmin } = useAuth();
+  
   const featuredTopic = topics[0];
   const otherTopics = topics.slice(1);
   const popularContents = [...contents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
   const recentContents = [...contents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
-  return <div className="max-w-6xl mx-auto space-y-10 animate-fade-in">
+  
+  return (
+    <div className="max-w-6xl mx-auto space-y-10 animate-fade-in">
       {/* Hero Section */}
       <section className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-primary via-primary to-primary/80 p-8 lg:p-12 text-primary-foreground">
         <div className="absolute inset-0 bg-[url('data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNjAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA2MCA2MCIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48ZyBmaWxsPSJub25lIiBmaWxsLXJ1bGU9ImV2ZW5vZGQiPjxnIGZpbGw9IiNmZmZmZmYiIGZpbGwtb3BhY2l0eT0iMC4xIj48Y2lyY2xlIGN4PSIzMCIgY3k9IjMwIiByPSIyIi8+PC9nPjwvZz48L3N2Zz4=')] opacity-50" />
@@ -38,9 +42,11 @@ export function HomePage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="glass" size="lg" asChild>
-              <Link to="/admin">Admin Panel</Link>
-            </Button>
+            {canAccessAdmin() && (
+              <Button variant="glass" size="lg" asChild>
+                <Link to="/admin">Admin Panel</Link>
+              </Button>
+            )}
           </div>
         </div>
       </section>
@@ -91,5 +97,6 @@ export function HomePage() {
           {recentContents.map(content => <ContentCard key={content.id} content={content} />)}
         </div>
       </section>
-    </div>;
+    </div>
+  );
 }
