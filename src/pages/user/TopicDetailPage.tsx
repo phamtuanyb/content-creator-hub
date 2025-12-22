@@ -1,5 +1,5 @@
 import { useParams } from 'react-router-dom';
-import { topics, contents, software } from '@/lib/mockData';
+import { useDataStore } from '@/lib/dataStore';
 import { ContentCard } from '@/components/cards/ContentCard';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,11 @@ import { Filter } from 'lucide-react';
 
 export function TopicDetailPage() {
   const { id } = useParams();
-  const topic = topics.find(t => t.id === id);
+  const { getTopicById, getContentsByTopic, getActiveSoftware, getPublishedContents } = useDataStore();
+  
+  const topic = getTopicById(id || '');
+  const software = getActiveSoftware();
+  
   const [platformFilter, setPlatformFilter] = useState<string>('all');
   const [purposeFilter, setPurposeFilter] = useState<string>('all');
   const [softwareFilter, setSoftwareFilter] = useState<string>('all');
@@ -23,12 +27,13 @@ export function TopicDetailPage() {
   if (!topic) {
     return (
       <div className="text-center py-12">
-        <h2 className="text-xl font-semibold">Topic not found</h2>
+        <h2 className="text-xl font-semibold">Không tìm thấy chủ đề</h2>
       </div>
     );
   }
 
-  const topicContents = contents.filter(c => c.topicId === id);
+  // Chỉ lấy content đã published của topic này
+  const topicContents = getContentsByTopic(id || '').filter(c => c.status === 'published');
 
   const filteredContents = topicContents.filter(content => {
     if (platformFilter !== 'all' && !content.platforms.includes(platformFilter)) return false;
@@ -38,7 +43,7 @@ export function TopicDetailPage() {
   });
 
   const platforms = [...new Set(topicContents.flatMap(c => c.platforms))];
-  const purposes = [...new Set(topicContents.map(c => c.purpose))];
+  const purposes = [...new Set(topicContents.map(c => c.purpose).filter(Boolean))];
 
   return (
     <div className="max-w-6xl mx-auto space-y-6 animate-fade-in">
@@ -49,7 +54,7 @@ export function TopicDetailPage() {
           <p className="text-muted-foreground">{topic.description}</p>
         </div>
         <Badge variant="primary" className="w-fit">
-          {topicContents.length} templates
+          {topicContents.length} mẫu nội dung
         </Badge>
       </div>
 
@@ -57,15 +62,15 @@ export function TopicDetailPage() {
       <div className="flex flex-wrap items-center gap-3 p-4 rounded-xl bg-card border border-border">
         <div className="flex items-center gap-2 text-sm text-muted-foreground">
           <Filter className="h-4 w-4" />
-          Filters:
+          Lọc:
         </div>
         
         <Select value={platformFilter} onValueChange={setPlatformFilter}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Platform" />
+            <SelectValue placeholder="Nền tảng" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Platforms</SelectItem>
+            <SelectItem value="all">Tất cả nền tảng</SelectItem>
             {platforms.map(p => (
               <SelectItem key={p} value={p}>{p}</SelectItem>
             ))}
@@ -74,10 +79,10 @@ export function TopicDetailPage() {
 
         <Select value={purposeFilter} onValueChange={setPurposeFilter}>
           <SelectTrigger className="w-36">
-            <SelectValue placeholder="Purpose" />
+            <SelectValue placeholder="Mục đích" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="all">All Purposes</SelectItem>
+            <SelectItem value="all">Tất cả mục đích</SelectItem>
             {purposes.map(p => (
               <SelectItem key={p} value={p}>{p}</SelectItem>
             ))}
@@ -87,10 +92,10 @@ export function TopicDetailPage() {
         {topic.id === '9' && (
           <Select value={softwareFilter} onValueChange={setSoftwareFilter}>
             <SelectTrigger className="w-36">
-              <SelectValue placeholder="Software" />
+              <SelectValue placeholder="Phần mềm" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="all">All Software</SelectItem>
+              <SelectItem value="all">Tất cả phần mềm</SelectItem>
               {software.map(s => (
                 <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>
               ))}
@@ -108,7 +113,7 @@ export function TopicDetailPage() {
               setSoftwareFilter('all');
             }}
           >
-            Clear filters
+            Xóa bộ lọc
           </Button>
         )}
       </div>
@@ -122,7 +127,7 @@ export function TopicDetailPage() {
         </div>
       ) : (
         <div className="text-center py-12 text-muted-foreground">
-          <p>No content matches your filters</p>
+          <p>Không có nội dung phù hợp với bộ lọc</p>
         </div>
       )}
     </div>

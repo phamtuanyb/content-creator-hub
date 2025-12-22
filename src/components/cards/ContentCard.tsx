@@ -1,8 +1,8 @@
 import { Link } from 'react-router-dom';
-import { Content, topics } from '@/lib/mockData';
+import { useDataStore, Content } from '@/lib/dataStore';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Copy, ArrowRight, Image as ImageIcon } from 'lucide-react';
+import { Copy, Image as ImageIcon } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 
 interface ContentCardProps {
@@ -12,15 +12,21 @@ interface ContentCardProps {
 
 export function ContentCard({ content, showTopic = true }: ContentCardProps) {
   const { toast } = useToast();
-  const topic = topics.find(t => t.id === content.topicId);
+  const { getTopicById, incrementCopyCount, images } = useDataStore();
+  const topic = getTopicById(content.topicId);
+  
+  // Check if content has images
+  const contentImages = images.filter(img => img.contentId === content.id);
+  const hasImage = contentImages.length > 0 || !!content.imageUrl;
 
   const handleCopy = (e: React.MouseEvent) => {
     e.preventDefault();
     e.stopPropagation();
     navigator.clipboard.writeText(content.body);
+    incrementCopyCount(content.id);
     toast({
-      title: "Copied!",
-      description: "Content copied to clipboard",
+      title: "Đã sao chép!",
+      description: "Nội dung đã được sao chép vào clipboard",
     });
   };
 
@@ -33,7 +39,7 @@ export function ContentCard({ content, showTopic = true }: ContentCardProps) {
         <div className="flex-1 min-w-0">
           {showTopic && topic && (
             <Badge variant="primary" className="mb-2">
-              {topic.name}
+              {topic.nameVi}
             </Badge>
           )}
           <h3 className="font-semibold text-foreground mb-1 line-clamp-1 group-hover:text-primary transition-colors">
@@ -41,9 +47,17 @@ export function ContentCard({ content, showTopic = true }: ContentCardProps) {
           </h3>
         </div>
         
-        {content.imageUrl && (
-          <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0">
-            <ImageIcon className="h-5 w-5 text-muted-foreground" />
+        {hasImage && (
+          <div className="w-12 h-12 rounded-lg bg-secondary flex items-center justify-center flex-shrink-0 overflow-hidden">
+            {contentImages[0]?.url || content.imageUrl ? (
+              <img 
+                src={contentImages[0]?.url || content.imageUrl} 
+                alt="" 
+                className="w-full h-full object-cover"
+              />
+            ) : (
+              <ImageIcon className="h-5 w-5 text-muted-foreground" />
+            )}
           </div>
         )}
       </div>
@@ -58,15 +72,17 @@ export function ContentCard({ content, showTopic = true }: ContentCardProps) {
             {platform}
           </Badge>
         ))}
-        <Badge variant="outline" className="text-xs">
-          {content.purpose}
-        </Badge>
+        {content.purpose && (
+          <Badge variant="outline" className="text-xs">
+            {content.purpose}
+          </Badge>
+        )}
       </div>
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">
           <Copy className="h-3.5 w-3.5" />
-          <span>{content.copyCount} copies</span>
+          <span>{content.copyCount} lượt sao chép</span>
         </div>
         
         <Button
@@ -76,7 +92,7 @@ export function ContentCard({ content, showTopic = true }: ContentCardProps) {
           className="h-8 px-3 gap-1.5 opacity-0 group-hover:opacity-100 transition-opacity"
         >
           <Copy className="h-3.5 w-3.5" />
-          Copy
+          Sao chép
         </Button>
       </div>
     </Link>
