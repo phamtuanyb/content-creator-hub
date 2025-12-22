@@ -5,9 +5,11 @@ import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, TrendingUp, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
+import { useAuth } from '@/lib/auth';
 
 export function HomePage() {
   const { t } = useI18n();
+  const { role } = useAuth();
   const featuredTopic = topics[0];
   const otherTopics = topics.slice(1);
   const popularContents = [...contents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
@@ -41,9 +43,12 @@ export function HomePage() {
                 <ArrowRight className="h-4 w-4" />
               </Link>
             </Button>
-            <Button variant="glass" size="lg" asChild>
-              <Link to="/admin">Admin Panel</Link>
-            </Button>
+            {/* Admin Panel button only visible to admin */}
+            {role === 'admin' && (
+              <Button variant="glass" size="lg" asChild>
+                <Link to="/admin">Admin Panel</Link>
+              </Button>
+            )}
           </div>
         </div>
       </section>
