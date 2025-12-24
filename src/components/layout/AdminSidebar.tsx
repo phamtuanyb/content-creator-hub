@@ -13,6 +13,7 @@ import {
   ChevronLeft,
   Users,
   Shield,
+  Megaphone,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -33,6 +34,7 @@ export function AdminSidebar() {
     { icon: FolderTree, label: 'Topics Management', path: '/admin/topics' },
     { icon: Boxes, label: 'Software Management', path: '/admin/software' },
     { icon: Image, label: 'Image Library', path: '/admin/images' },
+    { icon: Megaphone, label: 'Program Banners', path: '/admin/banners' },
     { icon: Settings, label: 'Settings', path: '/admin/settings' },
   ];
 
