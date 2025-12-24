@@ -1,4 +1,4 @@
-import { dashboardStats, contents } from '@/lib/mockData';
+import { useDataStore } from '@/lib/dataStore';
 import { StatCard } from '@/components/cards/StatCard';
 import { Badge } from '@/components/ui/badge';
 import { FolderTree, FileText, Copy, TrendingUp, Clock, Image } from 'lucide-react';
@@ -6,6 +6,9 @@ import { useI18n } from '@/lib/i18n';
 
 export function AdminDashboardPage() {
   const { t } = useI18n();
+  const { getDashboardStats, images } = useDataStore();
+  
+  const stats = getDashboardStats();
   
   return (
     <div className="space-y-8 animate-fade-in">
@@ -18,25 +21,25 @@ export function AdminDashboardPage() {
       <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard
           title={t('admin.dashboard.total_topics')}
-          value={dashboardStats.totalTopics}
+          value={stats.totalTopics}
           icon={FolderTree}
           trend={{ value: 12, positive: true }}
         />
         <StatCard
           title={t('admin.dashboard.total_content')}
-          value={dashboardStats.totalContents}
+          value={stats.totalContents}
           icon={FileText}
           trend={{ value: 8, positive: true }}
         />
         <StatCard
           title={t('admin.dashboard.total_copies')}
-          value={dashboardStats.totalCopies.toLocaleString()}
+          value={stats.totalCopies.toLocaleString()}
           icon={Copy}
           trend={{ value: 23, positive: true }}
         />
         <StatCard
           title={t('admin.dashboard.total_images')}
-          value="156"
+          value={images.length}
           icon={Image}
         />
       </div>
@@ -50,7 +53,7 @@ export function AdminDashboardPage() {
           </div>
           
           <div className="space-y-3">
-            {dashboardStats.topContents.map((content, index) => (
+            {stats.topContents.map((content, index) => (
               <div
                 key={content.id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"
@@ -78,7 +81,7 @@ export function AdminDashboardPage() {
           </div>
           
           <div className="space-y-3">
-            {dashboardStats.recentContents.map((content) => (
+            {stats.recentContents.map((content) => (
               <div
                 key={content.id}
                 className="flex items-center gap-3 p-3 rounded-lg bg-secondary/50"
