@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
-import { useDataStore, Content } from '@/lib/dataStore';
+import { useDataStore } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -21,7 +22,8 @@ const platforms = ['Facebook', 'Zalo', 'Group', 'Instagram', 'TikTok'];
 const purposes = ['Giới thiệu', 'Chốt sale', 'Seeding', 'Chăm sóc', 'Khuyến mãi'];
 
 export function EditorCreateContentPage() {
-  const { topics, software, addContent, updateContent, getContentById, addImage, images, deleteImage } = useDataStore();
+  const { software, addContent, updateContent, getContentById, addImage, images, deleteImage } = useDataStore();
+  const { getVisibleTopics, isTopicVisible } = useVisibleData();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
@@ -47,9 +49,15 @@ export function EditorCreateContentPage() {
     if (editId) {
       const content = getContentById(editId);
       if (content && content.ownerId === user?.id) {
+        // Non-admin users must not access content under hidden topics
+        if (!isTopicVisible(content.topicId)) {
+          navigate('/not-found', { replace: true });
+          return;
+        }
+
         const existingImages = images.filter(img => img.contentId === content.id);
         setUploadedImages(existingImages.map(img => ({ url: img.url, description: img.description || '' })));
-        
+
         setFormData({
           title: content.title,
           body: content.body,
@@ -63,7 +71,7 @@ export function EditorCreateContentPage() {
         });
       }
     }
-  }, [editId, getContentById, images, user?.id]);
+  }, [editId, getContentById, images, user?.id, isTopicVisible, navigate]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -231,7 +239,7 @@ export function EditorCreateContentPage() {
                   <SelectValue placeholder="Chọn chủ đề" />
                 </SelectTrigger>
                 <SelectContent>
-                  {topics.map(t => (
+                  {getVisibleTopics().map(t => (
                     <SelectItem key={t.id} value={t.id}>{t.nameVi}</SelectItem>
                   ))}
                 </SelectContent>

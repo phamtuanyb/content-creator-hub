@@ -1,125 +1,83 @@
 import { useDataStore, Topic, Content } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
-import { topics as mockTopics, contents as mockContents } from '@/lib/mockData';
 
 /**
- * Hook to get visible topics and contents based on user role.
- * Admin can see all topics/contents.
- * Non-admin users can only see active topics and their published contents.
+ * Centralized visibility rules for Topics + Content.
+ * - Admin: can see all topics and all contents.
+ * - Non-admin (including editor/sales/anonymous): can only see active topics,
+ *   and only published contents that belong to active topics.
  */
 export function useVisibleData() {
   const { role } = useAuth();
-  const { 
-    topics: storeTopics, 
-    contents: storeContents, 
+  const {
+    topics,
+    contents,
     getActiveTopics,
     getPublishedContents,
-    getTopicById: storeGetTopicById,
-    getContentById: storeGetContentById,
-    getContentsByTopic: storeGetContentsByTopic,
+    getTopicById,
+    getContentById,
+    getContentsByTopic,
   } = useDataStore();
-  
+
   const isAdmin = role === 'admin';
-  
-  // Get visible topics based on role
+
   const getVisibleTopics = (): Topic[] => {
-    if (isAdmin) {
-      return storeTopics;
-    }
-    return getActiveTopics();
+    return isAdmin ? topics : getActiveTopics();
   };
-  
-  // Get visible mock topics (from mockData.ts) based on role
-  const getVisibleMockTopics = () => {
-    if (isAdmin) {
-      return mockTopics;
-    }
-    return mockTopics.filter(t => t.status === 'active');
+
+  /**
+   * Published content that respects hidden-topic visibility.
+   * Use this for public/home/library lists.
+   */
+  const getVisiblePublishedContents = (): Content[] => {
+    const visibleTopicIds = new Set(getVisibleTopics().map((t) => t.id));
+    const published = getPublishedContents();
+
+    if (isAdmin) return published;
+
+    return published.filter((c) => visibleTopicIds.has(c.topicId));
   };
-  
-  // Get visible mock contents based on role and topic visibility
-  const getVisibleMockContents = () => {
-    const visibleTopicIds = getVisibleMockTopics().map(t => t.id);
-    
-    if (isAdmin) {
-      return mockContents;
-    }
-    
-    return mockContents.filter(c => 
-      c.status === 'published' && 
-      visibleTopicIds.includes(c.topicId)
-    );
-  };
-  
-  // Check if a topic is visible to current user
-  const isTopicVisible = (topicId: string): boolean => {
-    const topic = storeGetTopicById(topicId);
-    if (!topic) {
-      // Check mockData
-      const mockTopic = mockTopics.find(t => t.id === topicId);
-      if (!mockTopic) return false;
-      if (isAdmin) return true;
-      return mockTopic.status === 'active';
-    }
-    
-    if (isAdmin) return true;
-    return topic.status === 'active';
-  };
-  
-  // Check if a content is visible to current user
-  const isContentVisible = (contentId: string): boolean => {
-    const content = storeGetContentById(contentId);
-    if (!content) {
-      // Check mockData
-      const mockContent = mockContents.find(c => c.id === contentId);
-      if (!mockContent) return false;
-      
-      // Check if topic is visible
-      if (!isTopicVisible(mockContent.topicId)) return false;
-      
-      if (isAdmin) return true;
-      return mockContent.status === 'published';
-    }
-    
-    // Check if topic is visible
-    if (!isTopicVisible(content.topicId)) return false;
-    
-    if (isAdmin) return true;
-    return content.status === 'published';
-  };
-  
-  // Get visible contents for a specific topic
-  const getVisibleContentsByTopic = (topicId: string): Content[] => {
-    // First check if topic is visible
-    if (!isTopicVisible(topicId)) return [];
-    
-    const topicContents = storeGetContentsByTopic(topicId);
-    
-    if (isAdmin) {
-      return topicContents;
-    }
-    
-    return topicContents.filter(c => c.status === 'published');
-  };
-  
-  // Get all visible contents
+
+  /**
+   * Generic “visible content” helper.
+   * Non-admin: published + topic active.
+   * Admin: all contents.
+   */
   const getVisibleContents = (): Content[] => {
-    const visibleTopicIds = getVisibleTopics().map(t => t.id);
-    
-    if (isAdmin) {
-      return storeContents;
-    }
-    
-    return storeContents.filter(c => 
-      c.status === 'published' && 
-      visibleTopicIds.includes(c.topicId)
-    );
+    const visibleTopicIds = new Set(getVisibleTopics().map((t) => t.id));
+
+    if (isAdmin) return contents;
+
+    return contents.filter((c) => c.status === 'published' && visibleTopicIds.has(c.topicId));
   };
-  
+
+  const isTopicVisible = (topicId: string): boolean => {
+    const topic = getTopicById(topicId);
+    if (!topic) return false;
+    return isAdmin ? true : topic.status === 'active';
+  };
+
+  const isContentVisible = (contentId: string): boolean => {
+    const content = getContentById(contentId);
+    if (!content) return false;
+    if (!isTopicVisible(content.topicId)) return false;
+
+    return isAdmin ? true : content.status === 'published';
+  };
+
+  const getVisibleContentsByTopic = (topicId: string): Content[] => {
+    if (!isTopicVisible(topicId)) return [];
+
+    const topicContents = getContentsByTopic(topicId);
+
+    if (isAdmin) return topicContents;
+
+    return topicContents.filter((c) => c.status === 'published');
+  };
+
   return {
     getVisibleTopics,
-    getVisibleMockTopics,
-    getVisibleMockContents,
+    getVisiblePublishedContents,
     getVisibleContents,
     getVisibleContentsByTopic,
     isTopicVisible,
@@ -127,3 +85,4 @@ export function useVisibleData() {
     isAdmin,
   };
 }
+
