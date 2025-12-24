@@ -39,6 +39,7 @@ import { SalesContentLibraryPage } from "@/pages/sales/SalesContentLibraryPage";
 // Auth Pages
 import { AuthPage } from "@/pages/AuthPage";
 import { AccessDeniedPage } from "@/pages/AccessDeniedPage";
+import { WaitingRoomPage } from "@/pages/WaitingRoomPage";
 
 import NotFound from "./pages/NotFound";
 
@@ -59,6 +60,13 @@ const App = () => (
               {/* Auth Routes */}
               <Route path="/auth" element={<AuthPage />} />
               <Route path="/access-denied" element={<AccessDeniedPage />} />
+              
+              {/* Waiting Room - For pending accounts (must be protected but allow pending status) */}
+              <Route path="/waiting-room" element={
+                <ProtectedRoute allowPending={true}>
+                  <WaitingRoomPage />
+                </ProtectedRoute>
+              } />
               
               {/* Public Routes - Homepage accessible to all (landing page) */}
               <Route element={
