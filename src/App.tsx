@@ -20,7 +20,7 @@ import { ContentDetailPage } from "@/pages/user/ContentDetailPage";
 import { ProfileSettingsPage } from "@/pages/user/ProfileSettingsPage";
 
 // Admin Pages
-import { AdminLoginPage } from "@/pages/admin/AdminLoginPage";
+// AdminLoginPage removed - admins use /auth with role-based access via ProtectedRoute
 import { AdminDashboardPage } from "@/pages/admin/AdminDashboardPage";
 import { AdminTopicsPage } from "@/pages/admin/AdminTopicsPage";
 import { AdminContentPage } from "@/pages/admin/AdminContentPage";
@@ -99,8 +99,7 @@ const App = () => (
                 <Route path="/profile" element={<ProfileSettingsPage />} />
               </Route>
 
-              {/* Admin Routes - Only Admin can access */}
-              <Route path="/admin/login" element={<AdminLoginPage />} />
+              {/* Admin Routes - Only Admin can access (uses /auth for authentication) */}
               <Route path="/admin" element={
                 <ProtectedRoute requiredRoles={['admin']}>
                   <AdminLayout />
