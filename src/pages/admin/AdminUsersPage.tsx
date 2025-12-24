@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth, AppRole } from '@/lib/auth';
 import { supabase } from '@/integrations/supabase/client';
+import { logError } from '@/lib/errorLogger';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -126,7 +127,7 @@ export function AdminUsersPage() {
 
       setUsers(usersWithRoles);
     } catch (error) {
-      console.error('Error fetching users:', error);
+      logError(error, 'fetchUsers');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
@@ -165,7 +166,7 @@ export function AdminUsersPage() {
         setActivationRequests([]);
       }
     } catch (error) {
-      console.error('Error fetching activation requests:', error);
+      logError(error, 'fetchActivationRequests');
     }
   };
 
@@ -258,7 +259,7 @@ export function AdminUsersPage() {
       setIsDialogOpen(false);
       fetchUsers();
     } catch (error) {
-      console.error('Error saving user:', error);
+      logError(error, 'saveUser');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
@@ -299,7 +300,7 @@ export function AdminUsersPage() {
       fetchUsers();
       fetchActivationRequests();
     } catch (error) {
-      console.error('Error activating user:', error);
+      logError(error, 'activateUser');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
@@ -328,7 +329,7 @@ export function AdminUsersPage() {
       
       fetchActivationRequests();
     } catch (error) {
-      console.error('Error rejecting request:', error);
+      logError(error, 'rejectRequest');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
@@ -383,7 +384,7 @@ export function AdminUsersPage() {
       fetchUsers();
       fetchActivationRequests();
     } catch (error) {
-      console.error('Error toggling status:', error);
+      logError(error, 'toggleUserStatus');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
@@ -425,7 +426,7 @@ export function AdminUsersPage() {
       fetchUsers();
       fetchActivationRequests();
     } catch (error) {
-      console.error('Error deleting user:', error);
+      logError(error, 'deleteUser');
       toast({
         variant: 'destructive',
         title: 'Lỗi',
