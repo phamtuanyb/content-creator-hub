@@ -109,18 +109,6 @@ export function HomePage() {
       {/* Program Banner Box - visible to all */}
       <ProgramBannerBox />
 
-      {/* Featured Topic */}
-      <section>
-        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
-          <div className="lg:col-span-1">
-            {featuredTopic ? <TopicCard topic={featuredTopic} featured /> : null}
-          </div>
-          <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
-            {otherTopics.slice(0, 4).map(topic => <TopicCard key={topic.id} topic={topic} />)}
-          </div>
-        </div>
-      </section>
-
       {/* More Topics */}
       <section>
         <div className="flex items-center justify-between mb-5">

@@ -10,6 +10,16 @@ interface ProgramBanner {
   order_index: number;
 }
 
+// Shuffle array helper function
+function shuffleArray<T>(array: T[]): T[] {
+  const shuffled = [...array];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
+}
+
 export function ProgramBannerBox() {
   const [banners, setBanners] = useState<ProgramBanner[]>([]);
   const [loading, setLoading] = useState(true);
@@ -22,7 +32,8 @@ export function ProgramBannerBox() {
         .order('order_index', { ascending: true });
 
       if (!error && data) {
-        setBanners(data);
+        // Shuffle banners randomly
+        setBanners(shuffleArray(data));
       }
       setLoading(false);
     }
@@ -33,9 +44,9 @@ export function ProgramBannerBox() {
   if (loading) {
     return (
       <section className="w-full">
-        <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {[1, 2, 3, 4].map((i) => (
-            <Skeleton key={i} className="aspect-[16/9] rounded-xl" />
+        <div className="flex flex-col gap-4">
+          {[1, 2].map((i) => (
+            <Skeleton key={i} className="w-full max-w-[1200px] mx-auto aspect-[1200/410] rounded-xl" />
           ))}
         </div>
       </section>
@@ -48,7 +59,7 @@ export function ProgramBannerBox() {
 
   return (
     <section className="w-full">
-      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+      <div className="flex flex-col gap-4">
         {banners.map((banner) => (
           <BannerItem key={banner.id} banner={banner} />
         ))}
@@ -59,7 +70,7 @@ export function ProgramBannerBox() {
 
 function BannerItem({ banner }: { banner: ProgramBanner }) {
   const content = (
-    <div className="relative aspect-[16/9] rounded-xl overflow-hidden bg-muted group cursor-pointer">
+    <div className="relative w-full max-w-[1200px] mx-auto aspect-[1200/410] rounded-xl overflow-hidden bg-muted group cursor-pointer">
       <img
         src={banner.image_url}
         alt={banner.title || 'Program banner'}
