@@ -1,8 +1,9 @@
 import { useState } from 'react';
-import { useParams, Link, useNavigate } from 'react-router-dom';
+import { useParams, Link, useNavigate, Navigate } from 'react-router-dom';
 import { useDataStore } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
@@ -17,6 +18,7 @@ export function ContentDetailPage() {
   const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images, updateContent, deleteImage } = useDataStore();
   const { role, user, canEditContent, canPublishContent } = useAuth();
   const { buildCopyText } = useUserProfile();
+  const { isTopicVisible, isAdmin } = useVisibleData();
   const [showLoginModal, setShowLoginModal] = useState(false);
   
   const content = getContentById(id || '');
@@ -32,21 +34,21 @@ export function ContentDetailPage() {
   // Check permissions
   const canEdit = content ? canEditContent(content.ownerId || null) : false;
   const canPublish = canPublishContent();
-  const isAdmin = role === 'admin';
+  const isAdminRole = role === 'admin';
 
-  // Cho phép xem content nếu là owner hoặc admin, hoặc đã published
-  const canViewContent = content && (
+  // Check if the topic is visible (hidden topics shouldn't be accessible to non-admins)
+  const topicIsVisible = content ? isTopicVisible(content.topicId) : false;
+
+  // Allow viewing content if: topic is visible AND (published OR owner OR admin)
+  const canViewContent = content && topicIsVisible && (
     content.status === 'published' || 
     canEdit || 
-    isAdmin
+    isAdminRole
   );
 
+  // Redirect to not-found if content doesn't exist or topic is hidden for non-admin
   if (!content || !canViewContent) {
-    return (
-      <div className="text-center py-12">
-        <h2 className="text-xl font-semibold">Không tìm thấy nội dung</h2>
-      </div>
-    );
+    return <Navigate to="/not-found" replace />;
   }
 
   const requireAuth = (action: () => void) => {
@@ -318,7 +320,7 @@ export function ContentDetailPage() {
                         Tải xuống
                       </Button>
                       {/* Delete Image - Admin ONLY */}
-                      {isAdmin && (
+                      {isAdminRole && (
                         <Button
                           variant="outline"
                           size="sm"

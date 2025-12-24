@@ -1,4 +1,3 @@
-import { topics, contents } from '@/lib/mockData';
 import { TopicCard } from '@/components/cards/TopicCard';
 import { ContentCard } from '@/components/cards/ContentCard';
 import { Button } from '@/components/ui/button';
@@ -6,15 +5,21 @@ import { ArrowRight, Sparkles, TrendingUp, Clock } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
+import { useVisibleData } from '@/hooks/useVisibleData';
 
 export function HomePage() {
   const { t } = useI18n();
   const { canAccessAdmin } = useAuth();
+  const { getVisibleMockTopics, getVisibleMockContents } = useVisibleData();
   
-  const featuredTopic = topics[0];
-  const otherTopics = topics.slice(1);
-  const popularContents = [...contents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
-  const recentContents = [...contents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
+  // Only show active topics and published content from active topics
+  const visibleTopics = getVisibleMockTopics();
+  const visibleContents = getVisibleMockContents();
+  
+  const featuredTopic = visibleTopics[0];
+  const otherTopics = visibleTopics.slice(1);
+  const popularContents = [...visibleContents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
+  const recentContents = [...visibleContents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
   
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-fade-in">

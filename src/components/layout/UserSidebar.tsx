@@ -1,7 +1,7 @@
 import { Link, useLocation } from 'react-router-dom';
 import { cn } from '@/lib/utils';
-import { topics } from '@/lib/mockData';
 import { useI18n } from '@/lib/i18n';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import {
   ShoppingCart,
   HeartHandshake,
@@ -43,6 +43,10 @@ export function UserSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { t } = useI18n();
+  const { getVisibleMockTopics } = useVisibleData();
+  
+  // Only show active topics for non-admin users
+  const visibleTopics = getVisibleMockTopics();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-[calc(100vh-64px)] sticky top-16">
@@ -65,7 +69,7 @@ export function UserSidebar() {
             {t('topic.filter.all')}
           </Link>
           
-          {topics.map((topic) => {
+          {visibleTopics.map((topic) => {
             const Icon = iconMap[topic.icon] || LayoutGrid;
             const isActive = currentPath === `/topic/${topic.id}`;
             const translationKey = topicTranslationKeys[topic.id];
