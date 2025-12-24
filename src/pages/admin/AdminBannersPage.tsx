@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
+import { logError, isValidHttpUrl } from '@/lib/errorLogger';
 import {
   Table,
   TableBody,
@@ -62,7 +63,7 @@ export function AdminBannersPage() {
 
     if (error) {
       toast.error('Không thể tải danh sách banner');
-      console.error(error);
+      logError(error, 'fetchBanners');
     } else {
       setBanners(data || []);
     }
@@ -93,15 +94,48 @@ export function AdminBannersPage() {
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
 
-    if (!imageUrl.trim()) {
+    const trimmedImageUrl = imageUrl.trim();
+    const trimmedLinkUrl = linkUrl.trim();
+    const trimmedTitle = title.trim();
+
+    // Validate image URL
+    if (!trimmedImageUrl) {
       toast.error('Vui lòng nhập URL hình ảnh');
       return;
     }
 
+    if (!isValidHttpUrl(trimmedImageUrl)) {
+      toast.error('URL hình ảnh không hợp lệ. Vui lòng sử dụng URL bắt đầu bằng http:// hoặc https://');
+      return;
+    }
+
+    // Validate link URL if provided
+    if (trimmedLinkUrl && !isValidHttpUrl(trimmedLinkUrl)) {
+      toast.error('URL liên kết không hợp lệ. Vui lòng sử dụng URL bắt đầu bằng http:// hoặc https://');
+      return;
+    }
+
+    // Validate title length
+    if (trimmedTitle && trimmedTitle.length > 200) {
+      toast.error('Tiêu đề không được dài quá 200 ký tự');
+      return;
+    }
+
+    // Validate URL lengths
+    if (trimmedImageUrl.length > 2048) {
+      toast.error('URL hình ảnh quá dài (tối đa 2048 ký tự)');
+      return;
+    }
+
+    if (trimmedLinkUrl && trimmedLinkUrl.length > 2048) {
+      toast.error('URL liên kết quá dài (tối đa 2048 ký tự)');
+      return;
+    }
+
     const bannerData = {
-      image_url: imageUrl.trim(),
-      link_url: linkUrl.trim() || null,
-      title: title.trim() || null,
+      image_url: trimmedImageUrl,
+      link_url: trimmedLinkUrl || null,
+      title: trimmedTitle || null,
       status: isActive ? 'active' : 'inactive',
       start_date: startDate || null,
       end_date: endDate || null,
@@ -116,7 +150,7 @@ export function AdminBannersPage() {
 
       if (error) {
         toast.error('Không thể cập nhật banner');
-        console.error(error);
+        logError(error, 'updateBanner');
       } else {
         toast.success('Đã cập nhật banner');
         setDialogOpen(false);
@@ -130,7 +164,7 @@ export function AdminBannersPage() {
 
       if (error) {
         toast.error('Không thể thêm banner');
-        console.error(error);
+        logError(error, 'insertBanner');
       } else {
         toast.success('Đã thêm banner mới');
         setDialogOpen(false);
@@ -150,7 +184,7 @@ export function AdminBannersPage() {
 
     if (error) {
       toast.error('Không thể xóa banner');
-      console.error(error);
+      logError(error, 'deleteBanner');
     } else {
       toast.success('Đã xóa banner');
       fetchBanners();
@@ -166,7 +200,7 @@ export function AdminBannersPage() {
 
     if (error) {
       toast.error('Không thể cập nhật trạng thái');
-      console.error(error);
+      logError(error, 'toggleBannerStatus');
     } else {
       toast.success(`Banner đã ${newStatus === 'active' ? 'bật' : 'tắt'}`);
       fetchBanners();
