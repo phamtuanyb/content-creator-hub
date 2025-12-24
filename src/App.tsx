@@ -135,6 +135,7 @@ const App = () => (
               }>
                 <Route index element={<Navigate to="/sales/library" replace />} />
                 <Route path="library" element={<SalesContentLibraryPage />} />
+                <Route path="content" element={<Navigate to="/sales/library" replace />} />
               </Route>
 
               {/* 404 */}
