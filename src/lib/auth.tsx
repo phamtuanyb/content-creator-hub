@@ -8,7 +8,7 @@ export interface UserProfile {
   id: string;
   email: string;
   full_name: string | null;
-  status: 'active' | 'locked';
+  status: 'pending' | 'active' | 'locked';
   role: AppRole | null;
 }
 
@@ -70,7 +70,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           id: profileData.id,
           email: profileData.email,
           full_name: profileData.full_name,
-          status: profileData.status as 'active' | 'locked',
+          status: profileData.status as 'pending' | 'active' | 'locked',
           role: userRole,
         });
       }

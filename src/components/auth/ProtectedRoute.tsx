@@ -6,12 +6,14 @@ interface ProtectedRouteProps {
   children: React.ReactNode;
   requiredRoles?: AppRole[];
   requireAuth?: boolean;
+  allowPending?: boolean;
 }
 
 export function ProtectedRoute({ 
   children, 
   requiredRoles,
-  requireAuth = true 
+  requireAuth = true,
+  allowPending = false
 }: ProtectedRouteProps) {
   const { user, role, loading, profile } = useAuth();
   const location = useLocation();
@@ -32,6 +34,13 @@ export function ProtectedRoute({
   // Check if user account is locked
   if (profile?.status === 'locked') {
     return <Navigate to="/access-denied" state={{ reason: 'locked' }} replace />;
+  }
+
+  // Check if user account is pending activation (redirect to waiting room)
+  // Skip this check if allowPending is true (for the waiting room page itself)
+  // Also skip for admins who can always access the system
+  if (user && profile?.status === 'pending' && !allowPending && role !== 'admin') {
+    return <Navigate to="/waiting-room" replace />;
   }
 
   // Check if user has required role
