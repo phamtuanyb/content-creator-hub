@@ -463,6 +463,19 @@ export const useDataStore = create<DataStore>()(
     }),
     {
       name: 'mkt-content-hub-storage',
+      version: 2, // Increment this to reset cached data when schema changes
+      migrate: (persistedState: unknown, version: number) => {
+        // If version is outdated, return fresh initial state
+        if (version < 2) {
+          return {
+            topics: calculateContentCounts(initialTopics, initialContents),
+            software: initialSoftware,
+            contents: initialContents,
+            images: initialImages,
+          };
+        }
+        return persistedState as DataStore;
+      },
     }
   )
 );
