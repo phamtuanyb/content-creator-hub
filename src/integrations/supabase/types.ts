@@ -181,26 +181,17 @@ export type Database = {
       }
     }
     Views: {
-      user_activation_status: {
-        Row: {
-          created_at: string | null
-          status: string | null
-          user_id: string | null
-        }
-        Insert: {
-          created_at?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Update: {
-          created_at?: string | null
-          status?: string | null
-          user_id?: string | null
-        }
-        Relationships: []
-      }
+      [_ in never]: never
     }
     Functions: {
+      get_my_activation_status: {
+        Args: never
+        Returns: {
+          created_at: string
+          status: string
+          user_id: string
+        }[]
+      }
       get_user_role: {
         Args: { _user_id: string }
         Returns: Database["public"]["Enums"]["app_role"]

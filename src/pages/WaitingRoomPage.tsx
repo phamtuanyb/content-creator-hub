@@ -16,13 +16,12 @@ export function WaitingRoomPage() {
     const checkExistingRequest = async () => {
       if (!user) return;
       
+      // Use secure RPC function instead of direct table query
+      // This function only returns user's own data without exposing sensitive fields
       const { data, error } = await supabase
-        .from('activation_requests')
-        .select('id')
-        .eq('user_id', user.id)
-        .maybeSingle();
+        .rpc('get_my_activation_status');
       
-      if (!error && data) {
+      if (!error && data && data.length > 0) {
         setHasExistingRequest(true);
       }
       setIsLoading(false);
