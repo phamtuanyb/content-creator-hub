@@ -48,99 +48,8 @@ export interface AppImage {
   uploadedAt: string;
 }
 
-// Initial data
-const initialTopics: Topic[] = [
-  {
-    id: '1',
-    name: 'Sales Content',
-    nameVi: 'Content Bán Hàng',
-    description: 'Content templates for direct sales and closing deals',
-    icon: 'ShoppingCart',
-    contentCount: 0,
-    status: 'active',
-    color: 'primary',
-  },
-  {
-    id: '2',
-    name: 'Customer Care',
-    nameVi: 'Content Chăm Sóc Khách Hàng',
-    description: 'Templates for customer support and follow-up',
-    icon: 'HeartHandshake',
-    contentCount: 0,
-    status: 'active',
-    color: 'info',
-  },
-  {
-    id: '3',
-    name: 'Seeding Content',
-    nameVi: 'Content Seeding',
-    description: 'Organic engagement and community building',
-    icon: 'Sprout',
-    contentCount: 0,
-    status: 'active',
-    color: 'success',
-  },
-  {
-    id: '4',
-    name: 'Personal Branding',
-    nameVi: 'Content Thương Hiệu Cá Nhân Sales',
-    description: 'Build your personal brand as a sales professional',
-    icon: 'User',
-    contentCount: 0,
-    status: 'active',
-    color: 'warning',
-  },
-  {
-    id: '5',
-    name: 'Case Studies',
-    nameVi: 'Content Feedback – Case Study',
-    description: 'Success stories and customer testimonials',
-    icon: 'Star',
-    contentCount: 0,
-    status: 'active',
-    color: 'primary',
-  },
-  {
-    id: '6',
-    name: 'Promotions',
-    nameVi: 'Content Khuyến Mãi',
-    description: 'Promotional offers and discount announcements',
-    icon: 'Gift',
-    contentCount: 0,
-    status: 'active',
-    color: 'destructive',
-  },
-  {
-    id: '7',
-    name: 'Motivation',
-    nameVi: 'Content Cảm Xúc – Động Lực',
-    description: 'Inspirational and motivational content',
-    icon: 'Flame',
-    contentCount: 0,
-    status: 'active',
-    color: 'warning',
-  },
-  {
-    id: '8',
-    name: 'Industry Specific',
-    nameVi: 'Content Theo Ngành',
-    description: 'Content tailored to specific industries',
-    icon: 'Building2',
-    contentCount: 0,
-    status: 'active',
-    color: 'info',
-  },
-  {
-    id: '9',
-    name: 'By Software',
-    nameVi: 'Content Theo Phần Mềm',
-    description: 'Content organized by MKT software products',
-    icon: 'Boxes',
-    contentCount: 0,
-    status: 'active',
-    color: 'success',
-  },
-];
+// Initial data - Empty by default, admin will add topics
+const initialTopics: Topic[] = [];
 
 const initialSoftware: Software[] = [
   { id: '1', name: 'MKT Care', description: 'Customer care automation tool', tag: 'Chăm sóc', status: 'active' },
@@ -463,10 +372,10 @@ export const useDataStore = create<DataStore>()(
     }),
     {
       name: 'mkt-content-hub-storage',
-      version: 2, // Increment this to reset cached data when schema changes
+      version: 3, // Increment this to reset cached data when schema changes
       migrate: (persistedState: unknown, version: number) => {
         // If version is outdated, return fresh initial state
-        if (version < 2) {
+        if (version < 3) {
           return {
             topics: calculateContentCounts(initialTopics, initialContents),
             software: initialSoftware,
