@@ -1,4 +1,4 @@
-import { useParams } from 'react-router-dom';
+import { useParams, Navigate } from 'react-router-dom';
 import { useDataStore } from '@/lib/dataStore';
 import { ContentCard } from '@/components/cards/ContentCard';
 import { Badge } from '@/components/ui/badge';
@@ -12,10 +12,12 @@ import {
 } from '@/components/ui/select';
 import { useState } from 'react';
 import { Filter } from 'lucide-react';
+import { useVisibleData } from '@/hooks/useVisibleData';
 
 export function TopicDetailPage() {
   const { id } = useParams();
-  const { getTopicById, getContentsByTopic, getActiveSoftware, getPublishedContents } = useDataStore();
+  const { getTopicById, getActiveSoftware } = useDataStore();
+  const { isTopicVisible, getVisibleContentsByTopic, isAdmin } = useVisibleData();
   
   const topic = getTopicById(id || '');
   const software = getActiveSoftware();
@@ -24,6 +26,7 @@ export function TopicDetailPage() {
   const [purposeFilter, setPurposeFilter] = useState<string>('all');
   const [softwareFilter, setSoftwareFilter] = useState<string>('all');
 
+  // Check if topic exists
   if (!topic) {
     return (
       <div className="text-center py-12">
@@ -31,9 +34,14 @@ export function TopicDetailPage() {
       </div>
     );
   }
+  
+  // Check if topic is visible to current user (non-admin can't see hidden topics)
+  if (!isTopicVisible(id || '')) {
+    return <Navigate to="/not-found" replace />;
+  }
 
-  // Chỉ lấy content đã published của topic này
-  const topicContents = getContentsByTopic(id || '').filter(c => c.status === 'published');
+  // Get visible contents for this topic (respects role-based visibility)
+  const topicContents = getVisibleContentsByTopic(id || '');
 
   const filteredContents = topicContents.filter(content => {
     if (platformFilter !== 'all' && !content.platforms.includes(platformFilter)) return false;
