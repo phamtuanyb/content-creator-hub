@@ -10,16 +10,19 @@ import { useVisibleData } from '@/hooks/useVisibleData';
 export function HomePage() {
   const { t } = useI18n();
   const { canAccessAdmin } = useAuth();
-  const { getVisibleMockTopics, getVisibleMockContents } = useVisibleData();
-  
-  // Only show active topics and published content from active topics
-  const visibleTopics = getVisibleMockTopics();
-  const visibleContents = getVisibleMockContents();
-  
+  const { getVisibleTopics, getVisiblePublishedContents } = useVisibleData();
+
+  // Only show active topics for non-admin/public; admin can see all topics.
+  const visibleTopics = getVisibleTopics();
+  // Only show published contents, and only from active topics for non-admin/public.
+  const visibleContents = getVisiblePublishedContents();
+
   const featuredTopic = visibleTopics[0];
   const otherTopics = visibleTopics.slice(1);
   const popularContents = [...visibleContents].sort((a, b) => b.copyCount - a.copyCount).slice(0, 4);
-  const recentContents = [...visibleContents].sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()).slice(0, 4);
+  const recentContents = [...visibleContents]
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, 4);
   
   return (
     <div className="max-w-6xl mx-auto space-y-10 animate-fade-in">
@@ -60,7 +63,7 @@ export function HomePage() {
       <section>
         <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-4">
           <div className="lg:col-span-1">
-            <TopicCard topic={featuredTopic} featured />
+            {featuredTopic ? <TopicCard topic={featuredTopic} featured /> : null}
           </div>
           <div className="lg:col-span-2 grid sm:grid-cols-2 gap-4">
             {otherTopics.slice(0, 4).map(topic => <TopicCard key={topic.id} topic={topic} />)}

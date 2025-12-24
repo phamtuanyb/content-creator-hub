@@ -1,14 +1,14 @@
 import { useState } from 'react';
-import { useDataStore } from '@/lib/dataStore';
 import { ContentCard } from '@/components/cards/ContentCard';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { useVisibleData } from '@/hooks/useVisibleData';
 
 export function SalesContentLibraryPage() {
-  const { getPublishedContents } = useDataStore();
+  const { getVisiblePublishedContents } = useVisibleData();
   const [searchTerm, setSearchTerm] = useState('');
-  
-  const publishedContents = getPublishedContents();
+
+  const publishedContents = getVisiblePublishedContents();
   
   const filteredContents = publishedContents.filter(content =>
     content.title.toLowerCase().includes(searchTerm.toLowerCase()) ||

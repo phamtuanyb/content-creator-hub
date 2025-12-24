@@ -43,10 +43,10 @@ export function UserSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const { t } = useI18n();
-  const { getVisibleMockTopics } = useVisibleData();
-  
-  // Only show active topics for non-admin users
-  const visibleTopics = getVisibleMockTopics();
+  const { getVisibleTopics } = useVisibleData();
+
+  // Non-admin/public only see active topics; admin sees all.
+  const visibleTopics = getVisibleTopics();
 
   return (
     <aside className="hidden lg:flex flex-col w-64 border-r border-border bg-card h-[calc(100vh-64px)] sticky top-16">

@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useDataStore, Content } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -17,12 +18,13 @@ import { useToast } from '@/hooks/use-toast';
 
 export function EditorMyContentPage() {
   const { contents, getTopicById, updateContent } = useDataStore();
+  const { isTopicVisible } = useVisibleData();
   const { user } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  // Filter content owned by current user
-  const myContents = contents.filter(c => c.ownerId === user?.id);
+  // Filter content owned by current user (and exclude hidden-topic content for non-admin)
+  const myContents = contents.filter(c => c.ownerId === user?.id && isTopicVisible(c.topicId));
 
   const handleSubmitForApproval = (content: Content) => {
     updateContent(content.id, { status: 'draft' }); // Could be 'pending_approval' if we add that status

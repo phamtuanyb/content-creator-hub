@@ -1,5 +1,5 @@
 import { Link } from 'react-router-dom';
-import { Topic } from '@/lib/mockData';
+import type { Topic } from '@/lib/dataStore';
 import { cn } from '@/lib/utils';
 import { ShoppingCart, HeartHandshake, Sprout, User, Star, Gift, Flame, Building2, Boxes, LayoutGrid, ArrowRight } from 'lucide-react';
 const iconMap: Record<string, React.ElementType> = {
@@ -31,7 +31,7 @@ export function TopicCard({
   const Icon = iconMap[topic.icon] || LayoutGrid;
   const colorClass = colorMap[topic.color] || colorMap.primary;
   if (featured) {
-    return;
+    return null;
   }
   return <Link to={`/topic/${topic.id}`} className="group relative overflow-hidden rounded-xl bg-card border border-border p-5 card-hover">
       <div className="flex items-start gap-4">
