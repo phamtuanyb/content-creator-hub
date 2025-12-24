@@ -181,7 +181,24 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      user_activation_status: {
+        Row: {
+          created_at: string | null
+          status: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          status?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       get_user_role: {
