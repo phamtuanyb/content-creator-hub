@@ -1,3 +1,4 @@
+import * as React from 'react';
 import { useEffect, useState, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -134,31 +135,40 @@ export function ProgramBannerBox() {
   );
 }
 
-function BannerItem({ banner }: { banner: ProgramBanner }) {
-  const content = (
-    <div className="relative w-full aspect-[1200/410] rounded-xl overflow-hidden bg-muted group cursor-pointer">
-      <img
-        src={banner.image_url}
-        alt={banner.title || 'Program banner'}
-        className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
-        loading="lazy"
-      />
-      <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
-    </div>
-  );
-
-  if (banner.link_url) {
-    return (
-      <a
-        href={banner.link_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        className="block"
-      >
-        {content}
-      </a>
-    );
-  }
-
-  return content;
+interface BannerItemProps {
+  banner: ProgramBanner;
 }
+
+const BannerItem = React.forwardRef<HTMLDivElement, BannerItemProps>(
+  ({ banner }, ref) => {
+    const content = (
+      <div className="relative w-full aspect-[1200/410] rounded-xl overflow-hidden bg-muted group cursor-pointer">
+        <img
+          src={banner.image_url}
+          alt={banner.title || 'Program banner'}
+          className="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105"
+          loading="lazy"
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      </div>
+    );
+
+    if (banner.link_url) {
+      return (
+        <div ref={ref}>
+          <a
+            href={banner.link_url}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="block"
+          >
+            {content}
+          </a>
+        </div>
+      );
+    }
+
+    return <div ref={ref}>{content}</div>;
+  }
+);
+BannerItem.displayName = 'BannerItem';
