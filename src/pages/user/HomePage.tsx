@@ -1,12 +1,12 @@
 import { TopicCard } from '@/components/cards/TopicCard';
 import { ContentCard } from '@/components/cards/ContentCard';
+import { ProgramBannerBox } from '@/components/ProgramBannerBox';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Sparkles, TrendingUp, Clock, LogIn, UserPlus } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
 import { useAuth } from '@/lib/auth';
 import { useVisibleData } from '@/hooks/useVisibleData';
-
 export function HomePage() {
   const { t } = useI18n();
   const { user, canAccessAdmin } = useAuth();
@@ -63,6 +63,9 @@ export function HomePage() {
             </div>
           </div>
         </section>
+
+        {/* Program Banner Box - visible to all */}
+        <ProgramBannerBox />
       </div>
     );
   }
@@ -102,6 +105,9 @@ export function HomePage() {
           </div>
         </div>
       </section>
+
+      {/* Program Banner Box - visible to all */}
+      <ProgramBannerBox />
 
       {/* Featured Topic */}
       <section>

@@ -27,6 +27,7 @@ import { AdminContentPage } from "@/pages/admin/AdminContentPage";
 import { AdminSoftwarePage } from "@/pages/admin/AdminSoftwarePage";
 import { AdminImagesPage } from "@/pages/admin/AdminImagesPage";
 import { AdminUsersPage } from "@/pages/admin/AdminUsersPage";
+import { AdminBannersPage } from "@/pages/admin/AdminBannersPage";
 
 // Editor Pages
 import { EditorContentLibraryPage } from "@/pages/editor/EditorContentLibraryPage";
@@ -111,6 +112,7 @@ const App = () => (
                 <Route path="content" element={<AdminContentPage />} />
                 <Route path="software" element={<AdminSoftwarePage />} />
                 <Route path="images" element={<AdminImagesPage />} />
+                <Route path="banners" element={<AdminBannersPage />} />
                 <Route path="settings" element={<AdminDashboardPage />} />
               </Route>
 

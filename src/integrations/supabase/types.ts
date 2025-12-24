@@ -119,6 +119,45 @@ export type Database = {
         }
         Relationships: []
       }
+      program_banners: {
+        Row: {
+          created_at: string
+          end_date: string | null
+          id: string
+          image_url: string
+          link_url: string | null
+          order_index: number
+          start_date: string | null
+          status: string
+          title: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          image_url: string
+          link_url?: string | null
+          order_index?: number
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          end_date?: string | null
+          id?: string
+          image_url?: string
+          link_url?: string | null
+          order_index?: number
+          start_date?: string | null
+          status?: string
+          title?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           created_at: string
