@@ -1,7 +1,7 @@
-import { forwardRef, useEffect } from "react";
+import { useEffect } from "react";
 import { Link, useLocation } from "react-router-dom";
 
-const NotFound = forwardRef<HTMLDivElement>(function NotFound(props, ref) {
+function NotFound() {
   const location = useLocation();
 
   useEffect(() => {
@@ -9,7 +9,7 @@ const NotFound = forwardRef<HTMLDivElement>(function NotFound(props, ref) {
   }, [location.pathname]);
 
   return (
-    <div ref={ref} className="flex min-h-screen items-center justify-center bg-muted" {...props}>
+    <div className="flex min-h-screen items-center justify-center bg-muted">
       <div className="text-center">
         <h1 className="mb-4 text-4xl font-bold">404</h1>
         <p className="mb-4 text-xl text-muted-foreground">Oops! Page not found</p>
@@ -19,6 +19,6 @@ const NotFound = forwardRef<HTMLDivElement>(function NotFound(props, ref) {
       </div>
     </div>
   );
-});
+}
 
 export default NotFound;
