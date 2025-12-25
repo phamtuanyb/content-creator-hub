@@ -8,8 +8,9 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2 } from 'lucide-react';
+import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2, Clock, TrendingUp } from 'lucide-react';
 import { LoginPromptModal } from '@/components/auth/LoginPromptModal';
+import { ReadingProgressBar } from '@/components/ReadingProgressBar';
 
 export function ContentDetailPage() {
   const { id } = useParams();
@@ -57,6 +58,15 @@ export function ContentDetailPage() {
       return;
     }
     action();
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('vi-VN', { 
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric'
+    });
   };
 
   const handleCopy = (text: string, label: string, withHotline: boolean = false) => {
@@ -127,70 +137,92 @@ export function ContentDetailPage() {
   };
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-fade-in">
-      {/* Back Link */}
-      <Link
-        to={topic ? `/topic/${topic.id}` : '/'}
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Quay lại {topic?.nameVi || 'Trang chủ'}
-      </Link>
+    <>
+      {/* Reading Progress Bar */}
+      <ReadingProgressBar />
+      
+      <div className="max-w-5xl mx-auto space-y-8 animate-fade-in">
+        {/* Back Link */}
+        <Link
+          to={topic ? `/topic/${topic.id}` : '/'}
+          className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors group"
+        >
+          <ArrowLeft className="h-4 w-4 transition-transform group-hover:-translate-x-1" />
+          Quay lại {topic?.nameVi || 'Trang chủ'}
+        </Link>
 
-      {/* Header */}
-      <div className="rounded-xl bg-card border border-border p-6">
-        <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
-          <div className="flex flex-wrap items-center gap-2">
-            {topic && <Badge variant="primary">{topic.nameVi}</Badge>}
-            {sw && <Badge variant="info">{sw.name}</Badge>}
-          </div>
+        {/* Premium Header */}
+        <div className="relative overflow-hidden rounded-3xl glass-strong p-8 lg:p-10">
+          {/* Background glow */}
+          <div className="absolute -top-20 -right-20 w-40 h-40 bg-primary/20 rounded-full blur-[80px]" />
+          <div className="absolute -bottom-20 -left-20 w-40 h-40 bg-cyan-500/20 rounded-full blur-[80px]" />
           
-          {/* Role-based action buttons */}
-          <div className="flex items-center gap-2">
-            {/* Edit - Admin OR (Editor AND owner) */}
-            {canEdit && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate(`/admin/content?edit=${content.id}`)}
-                className="gap-2"
-              >
-                <Pencil className="h-4 w-4" />
-                Chỉnh sửa
-              </Button>
-            )}
+          <div className="relative">
+            <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+              <div className="flex flex-wrap items-center gap-2">
+                {topic && (
+                  <Badge className="bg-primary/20 text-primary border-primary/30 backdrop-blur-sm px-3 py-1">
+                    {topic.nameVi}
+                  </Badge>
+                )}
+                {sw && (
+                  <Badge className="bg-cyan-500/20 text-cyan-500 border-cyan-500/30 backdrop-blur-sm px-3 py-1">
+                    {sw.name}
+                  </Badge>
+                )}
+                {content.status === 'draft' && (
+                  <Badge variant="secondary" className="px-3 py-1">Bản nháp</Badge>
+                )}
+              </div>
+              
+              {/* Role-based action buttons */}
+              <div className="flex items-center gap-2">
+                {canEdit && (
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => navigate(`/admin/content?edit=${content.id}`)}
+                    className="gap-2 hover:bg-primary/10 hover:border-primary/30 hover:text-primary transition-all"
+                  >
+                    <Pencil className="h-4 w-4" />
+                    Chỉnh sửa
+                  </Button>
+                )}
+                
+                {canPublish && content.status === 'draft' && (
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      updateContent(content.id, { status: 'published' });
+                      toast({ title: 'Đã xuất bản', description: 'Nội dung đã được xuất bản' });
+                    }}
+                    className="gap-2 bg-gradient-to-r from-green-500 to-emerald-500 hover:from-green-600 hover:to-emerald-600 text-white border-0"
+                  >
+                    <CheckCircle className="h-4 w-4" />
+                    Xuất bản
+                  </Button>
+                )}
+              </div>
+            </div>
             
-            {/* Publish - Admin ONLY */}
-            {canPublish && content.status === 'draft' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => {
-                  updateContent(content.id, { status: 'published' });
-                  toast({ title: 'Đã xuất bản', description: 'Nội dung đã được xuất bản' });
-                }}
-                className="gap-2 text-green-600 border-green-600 hover:bg-green-50"
-              >
-                <CheckCircle className="h-4 w-4" />
-                Xuất bản
-              </Button>
-            )}
+            <h1 className="text-3xl lg:text-4xl font-bold mb-4 leading-tight">{content.title}</h1>
+            
+            <div className="flex flex-wrap items-center gap-6 text-sm text-muted-foreground">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-primary/10">
+                  <Clock className="h-4 w-4 text-primary" />
+                </div>
+                <span>{formatDate(content.createdAt)}</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-orange-500/10">
+                  <TrendingUp className="h-4 w-4 text-orange-500" />
+                </div>
+                <span>{content.copyCount} lượt sao chép</span>
+              </div>
+            </div>
           </div>
         </div>
-        
-        <h1 className="text-2xl font-bold mb-2">{content.title}</h1>
-        
-        <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-          <div className="flex items-center gap-1.5">
-            <Calendar className="h-4 w-4" />
-            {content.createdAt}
-          </div>
-          <div className="flex items-center gap-1.5">
-            <Copy className="h-4 w-4" />
-            {content.copyCount} lượt sao chép
-          </div>
-        </div>
-      </div>
 
       {/* Main Layout: Content + Image side by side */}
       <div className="grid lg:grid-cols-3 gap-6">
@@ -434,5 +466,6 @@ export function ContentDetailPage() {
       
       <LoginPromptModal open={showLoginModal} onOpenChange={setShowLoginModal} />
     </div>
+    </>
   );
 }
