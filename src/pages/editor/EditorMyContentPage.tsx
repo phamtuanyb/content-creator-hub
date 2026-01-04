@@ -1,5 +1,4 @@
-import { useState } from 'react';
-import { useDataStore, Content } from '@/lib/dataStore';
+import { useDataStore } from '@/lib/dataStore';
 import { useAuth } from '@/lib/auth';
 import { useVisibleData } from '@/hooks/useVisibleData';
 import { Badge } from '@/components/ui/badge';
@@ -13,26 +12,26 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useNavigate } from 'react-router-dom';
-import { Pencil, Eye, Send } from 'lucide-react';
-import { useToast } from '@/hooks/use-toast';
+import { Pencil, Eye, Loader2 } from 'lucide-react';
 
 export function EditorMyContentPage() {
-  const { contents, getTopicById, updateContent } = useDataStore();
-  const { isTopicVisible } = useVisibleData();
+  const { getTopicById } = useDataStore();
+  const { getVisibleContents, isTopicVisible, loading } = useVisibleData();
   const { user } = useAuth();
   const navigate = useNavigate();
-  const { toast } = useToast();
 
+  const allContents = getVisibleContents();
+  
   // Filter content owned by current user (and exclude hidden-topic content for non-admin)
-  const myContents = contents.filter(c => c.ownerId === user?.id && isTopicVisible(c.topicId));
+  const myContents = allContents.filter(c => c.ownerId === user?.id && isTopicVisible(c.topicId));
 
-  const handleSubmitForApproval = (content: Content) => {
-    updateContent(content.id, { status: 'draft' }); // Could be 'pending_approval' if we add that status
-    toast({
-      title: 'Đã gửi duyệt',
-      description: 'Nội dung đã được gửi để Admin duyệt',
-    });
-  };
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -75,11 +74,13 @@ export function EditorMyContentPage() {
                     </TableCell>
                     <TableCell>{topic?.nameVi || '-'}</TableCell>
                     <TableCell>
-                      <Badge variant={content.status === 'published' ? 'success' : 'secondary'}>
+                      <Badge variant={content.status === 'published' ? 'default' : 'secondary'}>
                         {content.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{content.createdAt}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(content.createdAt).toLocaleDateString('vi-VN')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button
@@ -96,16 +97,6 @@ export function EditorMyContentPage() {
                         >
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        {content.status === 'draft' && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleSubmitForApproval(content)}
-                            title="Submit for Approval"
-                          >
-                            <Send className="h-4 w-4 text-primary" />
-                          </Button>
-                        )}
                       </div>
                     </TableCell>
                   </TableRow>

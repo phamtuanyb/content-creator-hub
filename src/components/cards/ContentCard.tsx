@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link } from 'react-router-dom';
-import { useDataStore, Content } from '@/lib/dataStore';
+import { useDataStore } from '@/lib/dataStore';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import { useAuth } from '@/lib/auth';
 import { useUserProfile } from '@/hooks/useUserProfile';
 import { Badge } from '@/components/ui/badge';
@@ -11,16 +12,28 @@ import { useToast } from '@/hooks/use-toast';
 import { LoginPromptModal } from '@/components/auth/LoginPromptModal';
 
 interface ContentCardProps {
-  content: Content;
+  content: {
+    id: string;
+    title: string;
+    body: string;
+    topicId: string;
+    status: string;
+    imageUrl?: string;
+    copyCount: number;
+    platforms?: string[];
+    purpose?: string;
+    ownerId?: string;
+  };
   showTopic?: boolean;
-  onEdit?: (content: Content) => void;
-  onDelete?: (content: Content) => void;
-  onPublish?: (content: Content) => void;
+  onEdit?: (content: ContentCardProps['content']) => void;
+  onDelete?: (content: ContentCardProps['content']) => void;
+  onPublish?: (content: ContentCardProps['content']) => void;
 }
 
 export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPublish }: ContentCardProps) {
   const { toast } = useToast();
-  const { getTopicById, incrementCopyCount, images } = useDataStore();
+  const { getTopicById, images } = useDataStore();
+  const { incrementCopyCount } = useVisibleData();
   const { role, user, canEditContent, canPublishContent } = useAuth();
   const { buildCopyText } = useUserProfile();
   const [showLoginModal, setShowLoginModal] = useState(false);
@@ -32,7 +45,7 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
   const contentImages = images.filter(img => img.contentId === content.id);
   const hasImage = contentImages.length > 0 || !!content.imageUrl;
 
-  const handleCopy = (e: React.MouseEvent, withHotline: boolean = true) => {
+  const handleCopy = async (e: React.MouseEvent, withHotline: boolean = true) => {
     e.preventDefault();
     e.stopPropagation();
     
@@ -43,7 +56,12 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
     
     const textToCopy = withHotline ? buildCopyText(content.body) : content.body;
     navigator.clipboard.writeText(textToCopy);
-    incrementCopyCount(content.id);
+    
+    try {
+      await incrementCopyCount(content.id);
+    } catch (error) {
+      console.error('Error incrementing copy count:', error);
+    }
     
     toast({
       title: "Đã sao chép!",
@@ -87,18 +105,20 @@ export function ContentCard({ content, showTopic = true, onEdit, onDelete, onPub
         {content.body}
       </p>
 
-      <div className="flex flex-wrap gap-1.5 mb-4">
-        {content.platforms.map((platform) => (
-          <Badge key={platform} variant="secondary" className="text-xs">
-            {platform}
-          </Badge>
-        ))}
-        {content.purpose && (
-          <Badge variant="outline" className="text-xs">
-            {content.purpose}
-          </Badge>
-        )}
-      </div>
+      {content.platforms && content.platforms.length > 0 && (
+        <div className="flex flex-wrap gap-1.5 mb-4">
+          {content.platforms.map((platform) => (
+            <Badge key={platform} variant="secondary" className="text-xs">
+              {platform}
+            </Badge>
+          ))}
+          {content.purpose && (
+            <Badge variant="outline" className="text-xs">
+              {content.purpose}
+            </Badge>
+          )}
+        </div>
+      )}
 
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2 text-xs text-muted-foreground">

@@ -11,7 +11,8 @@ import {
   UserPlus,
   Zap,
   Star,
-  BookOpen
+  BookOpen,
+  Loader2
 } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useI18n } from '@/lib/i18n';
@@ -21,7 +22,7 @@ import { useVisibleData } from '@/hooks/useVisibleData';
 export function HomePage() {
   const { t } = useI18n();
   const { user, canAccessAdmin } = useAuth();
-  const { getVisibleTopics, getVisiblePublishedContents } = useVisibleData();
+  const { getVisibleTopics, getVisiblePublishedContents, loading } = useVisibleData();
 
   const isAuthenticated = !!user;
 
@@ -38,6 +39,15 @@ export function HomePage() {
   const trendingContents = [...visibleContents]
     .sort((a, b) => b.copyCount - a.copyCount)
     .slice(0, 5);
+
+  // Show loading state for authenticated users
+  if (isAuthenticated && loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Landing page for non-authenticated users
   if (!isAuthenticated) {

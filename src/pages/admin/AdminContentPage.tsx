@@ -1,12 +1,12 @@
 import { useState, useRef } from 'react';
-import { useDataStore, Content } from '@/lib/dataStore';
+import { useDataStore } from '@/lib/dataStore';
+import { useVisibleData } from '@/hooks/useVisibleData';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -39,32 +39,34 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import { useToast } from '@/hooks/use-toast';
-import { Plus, Pencil, Trash2, Upload, X, Image } from 'lucide-react';
-
-const platforms = ['Facebook', 'Zalo', 'Group', 'Instagram', 'TikTok'];
-const purposes = ['Giới thiệu', 'Chốt sale', 'Seeding', 'Chăm sóc', 'Khuyến mãi'];
+import { Plus, Pencil, Trash2, Upload, X, Image, Loader2 } from 'lucide-react';
 
 export function AdminContentPage() {
-  const { contents, topics, software, addContent, updateContent, deleteContent, getTopicById, addImage, images, deleteImage } = useDataStore();
-  const [editingContent, setEditingContent] = useState<Content | null>(null);
-  const [deletingContent, setDeletingContent] = useState<Content | null>(null);
+  const { topics, software, getTopicById } = useDataStore();
+  const { 
+    getVisibleContents, 
+    addContent: addContentToDb, 
+    updateContent: updateContentInDb, 
+    deleteContent: deleteContentFromDb,
+    loading 
+  } = useVisibleData();
+  
+  const contents = getVisibleContents();
+  
+  const [editingContentId, setEditingContentId] = useState<string | null>(null);
+  const [deletingContentId, setDeletingContentId] = useState<string | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const [formData, setFormData] = useState({
     title: '',
     body: '',
-    hashtags: '',
-    cta: '',
     topicId: '',
     softwareId: '',
-    platforms: [] as string[],
-    purpose: '',
     status: true,
-    aiImagePrompt: '',
     imageUrl: '',
-    imageDescription: '',
   });
 
   const [uploadedImages, setUploadedImages] = useState<{ url: string; description: string }[]>([]);
@@ -73,40 +75,30 @@ export function AdminContentPage() {
     setFormData({
       title: '',
       body: '',
-      hashtags: '',
-      cta: '',
       topicId: '',
       softwareId: '',
-      platforms: [],
-      purpose: '',
       status: true,
-      aiImagePrompt: '',
       imageUrl: '',
-      imageDescription: '',
     });
     setUploadedImages([]);
-    setEditingContent(null);
+    setEditingContentId(null);
   };
 
-  const openEditDialog = (content: Content) => {
-    setEditingContent(content);
-    // Load existing images for this content
-    const existingImages = images.filter(img => img.contentId === content.id);
-    setUploadedImages(existingImages.map(img => ({ url: img.url, description: img.description || '' })));
+  const openEditDialog = (content: ReturnType<typeof getVisibleContents>[0]) => {
+    setEditingContentId(content.id);
+    if (content.imageUrl) {
+      setUploadedImages([{ url: content.imageUrl, description: '' }]);
+    } else {
+      setUploadedImages([]);
+    }
     
     setFormData({
       title: content.title,
       body: content.body,
-      hashtags: content.hashtags.join(', '),
-      cta: content.cta,
-      topicId: content.topicId,
+      topicId: content.topicId || '',
       softwareId: content.softwareId || '',
-      platforms: content.platforms,
-      purpose: content.purpose,
       status: content.status === 'published',
-      aiImagePrompt: content.aiImagePrompt || '',
       imageUrl: content.imageUrl || '',
-      imageDescription: content.imageDescription || '',
     });
     setIsDialogOpen(true);
   };
@@ -133,13 +125,7 @@ export function AdminContentPage() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const updateImageDescription = (index: number, description: string) => {
-    setUploadedImages(prev => prev.map((img, i) => 
-      i === index ? { ...img, description } : img
-    ));
-  };
-
-  const handleSave = (asDraft: boolean = false) => {
+  const handleSave = async (asDraft: boolean = false) => {
     if (!formData.title.trim()) {
       toast({ title: 'Lỗi', description: 'Vui lòng nhập tiêu đề nội dung', variant: 'destructive' });
       return;
@@ -148,87 +134,65 @@ export function AdminContentPage() {
       toast({ title: 'Lỗi', description: 'Vui lòng nhập nội dung', variant: 'destructive' });
       return;
     }
-    if (!formData.topicId) {
-      toast({ title: 'Lỗi', description: 'Vui lòng chọn chủ đề', variant: 'destructive' });
-      return;
-    }
 
-    const hashtags = formData.hashtags.split(',').map(h => h.trim()).filter(Boolean);
     const status = asDraft ? 'draft' : (formData.status ? 'published' : 'draft');
     
-    let contentId = editingContent?.id || '';
-    
-    if (editingContent) {
-      updateContent(editingContent.id, {
-        title: formData.title,
-        body: formData.body,
-        hashtags,
-        cta: formData.cta,
-        topicId: formData.topicId,
-        softwareId: formData.softwareId || undefined,
-        platforms: formData.platforms,
-        purpose: formData.purpose,
-        status,
-        aiImagePrompt: formData.aiImagePrompt,
-        imageUrl: uploadedImages[0]?.url || formData.imageUrl,
-        imageDescription: uploadedImages[0]?.description || formData.imageDescription,
-      });
-      
-      // Remove old images and add new ones
-      const oldImages = images.filter(img => img.contentId === editingContent.id);
-      oldImages.forEach(img => deleteImage(img.id));
-      
-      toast({ title: 'Đã cập nhật', description: 'Nội dung đã được cập nhật thành công' });
-    } else {
-      // For new content, we'll create the content first
-      contentId = String(Date.now());
-      addContent({
-        title: formData.title,
-        body: formData.body,
-        hashtags,
-        cta: formData.cta,
-        topicId: formData.topicId,
-        softwareId: formData.softwareId || undefined,
-        platforms: formData.platforms,
-        purpose: formData.purpose,
-        status,
-        aiImagePrompt: formData.aiImagePrompt,
-        imageUrl: uploadedImages[0]?.url,
-        imageDescription: uploadedImages[0]?.description,
-      });
-      toast({ title: 'Đã tạo mới', description: 'Nội dung mới đã được thêm thành công' });
-    }
+    setIsSaving(true);
+    try {
+      if (editingContentId) {
+        await updateContentInDb(editingContentId, {
+          title: formData.title,
+          body: formData.body,
+          topic_id: formData.topicId || undefined,
+          software_id: formData.softwareId || undefined,
+          status: status as 'draft' | 'published',
+          image_url: uploadedImages[0]?.url || formData.imageUrl || undefined,
+        });
+        toast({ title: 'Đã cập nhật', description: 'Nội dung đã được cập nhật thành công' });
+      } else {
+        await addContentToDb({
+          title: formData.title,
+          body: formData.body,
+          topic_id: formData.topicId || undefined,
+          software_id: formData.softwareId || undefined,
+          status: status as 'draft' | 'published',
+          image_url: uploadedImages[0]?.url || undefined,
+        });
+        toast({ title: 'Đã tạo mới', description: 'Nội dung mới đã được thêm thành công' });
+      }
 
-    // Add uploaded images to store
-    uploadedImages.forEach(img => {
-      addImage({
-        url: img.url,
-        contentId: editingContent?.id || contentId,
-        contentTitle: formData.title,
-        description: img.description,
-      });
-    });
-
-    setIsDialogOpen(false);
-    resetForm();
-  };
-
-  const handleDelete = () => {
-    if (deletingContent) {
-      deleteContent(deletingContent.id);
-      toast({ title: 'Đã xóa', description: 'Nội dung đã được xóa khỏi hệ thống' });
-      setDeletingContent(null);
+      setIsDialogOpen(false);
+      resetForm();
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({ title: 'Lỗi', description: 'Không thể lưu nội dung', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
-  const togglePlatform = (platform: string) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform],
-    }));
+  const handleDelete = async () => {
+    if (deletingContentId) {
+      try {
+        await deleteContentFromDb(deletingContentId);
+        toast({ title: 'Đã xóa', description: 'Nội dung đã được xóa khỏi hệ thống' });
+      } catch (error) {
+        console.error('Error deleting content:', error);
+        toast({ title: 'Lỗi', description: 'Không thể xóa nội dung', variant: 'destructive' });
+      }
+      setDeletingContentId(null);
+    }
   };
+
+  const deletingContent = contents.find(c => c.id === deletingContentId);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6 animate-fade-in">
@@ -250,8 +214,6 @@ export function AdminContentPage() {
             <TableRow>
               <TableHead>Tiêu đề</TableHead>
               <TableHead>Chủ đề</TableHead>
-              <TableHead>Nền tảng</TableHead>
-              <TableHead>Mục đích</TableHead>
               <TableHead>Trạng thái</TableHead>
               <TableHead>Ngày tạo</TableHead>
               <TableHead className="text-right">Thao tác</TableHead>
@@ -260,7 +222,7 @@ export function AdminContentPage() {
           <TableBody>
             {contents.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                <TableCell colSpan={5} className="text-center py-8 text-muted-foreground">
                   Chưa có nội dung nào. Nhấn "Thêm Nội dung" để bắt đầu.
                 </TableCell>
               </TableRow>
@@ -274,28 +236,19 @@ export function AdminContentPage() {
                     </TableCell>
                     <TableCell>{topic?.nameVi || '-'}</TableCell>
                     <TableCell>
-                      <div className="flex gap-1">
-                        {content.platforms.slice(0, 2).map(p => (
-                          <Badge key={p} variant="secondary" className="text-xs">{p}</Badge>
-                        ))}
-                        {content.platforms.length > 2 && (
-                          <Badge variant="secondary" className="text-xs">+{content.platforms.length - 2}</Badge>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{content.purpose}</TableCell>
-                    <TableCell>
-                      <Badge variant={content.status === 'published' ? 'success' : 'secondary'}>
+                      <Badge variant={content.status === 'published' ? 'default' : 'secondary'}>
                         {content.status === 'published' ? 'Đã đăng' : 'Bản nháp'}
                       </Badge>
                     </TableCell>
-                    <TableCell className="text-muted-foreground">{content.createdAt}</TableCell>
+                    <TableCell className="text-muted-foreground">
+                      {new Date(content.createdAt).toLocaleDateString('vi-VN')}
+                    </TableCell>
                     <TableCell className="text-right">
                       <div className="flex justify-end gap-1">
                         <Button variant="ghost" size="icon" onClick={() => openEditDialog(content)}>
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="icon" onClick={() => setDeletingContent(content)}>
+                        <Button variant="ghost" size="icon" onClick={() => setDeletingContentId(content.id)}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </div>
@@ -315,7 +268,7 @@ export function AdminContentPage() {
       }}>
         <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{editingContent ? 'Sửa Nội dung' : 'Thêm Nội dung mới'}</DialogTitle>
+            <DialogTitle>{editingContentId ? 'Sửa Nội dung' : 'Thêm Nội dung mới'}</DialogTitle>
           </DialogHeader>
           
           <div className="grid md:grid-cols-2 gap-6 py-4">
@@ -339,35 +292,18 @@ export function AdminContentPage() {
                   rows={10}
                 />
               </div>
-              
-              <div className="space-y-2">
-                <Label>Hashtags (phân cách bằng dấu phẩy)</Label>
-                <Input
-                  value={formData.hashtags}
-                  onChange={(e) => setFormData({ ...formData, hashtags: e.target.value })}
-                  placeholder="#MKT, #Sales, #Marketing"
-                />
-              </div>
-              
-              <div className="space-y-2">
-                <Label>CTA (Call to Action)</Label>
-                <Input
-                  value={formData.cta}
-                  onChange={(e) => setFormData({ ...formData, cta: e.target.value })}
-                  placeholder="VD: Mua ngay →"
-                />
-              </div>
             </div>
 
             {/* Right Column */}
             <div className="space-y-4">
               <div className="space-y-2">
-                <Label>Chủ đề *</Label>
-                <Select value={formData.topicId} onValueChange={(v) => setFormData({ ...formData, topicId: v })}>
+                <Label>Chủ đề</Label>
+                <Select value={formData.topicId || "none"} onValueChange={(v) => setFormData({ ...formData, topicId: v === "none" ? "" : v })}>
                   <SelectTrigger>
                     <SelectValue placeholder="Chọn chủ đề" />
                   </SelectTrigger>
                   <SelectContent>
+                    <SelectItem value="none">Không chọn</SelectItem>
                     {topics.map(t => (
                       <SelectItem key={t.id} value={t.id}>{t.nameVi}</SelectItem>
                     ))}
@@ -390,47 +326,6 @@ export function AdminContentPage() {
                 </Select>
               </div>
 
-              <div className="space-y-2">
-                <Label>Nền tảng</Label>
-                <div className="flex flex-wrap gap-3">
-                  {platforms.map(p => (
-                    <div key={p} className="flex items-center gap-2">
-                      <Checkbox
-                        id={p}
-                        checked={formData.platforms.includes(p)}
-                        onCheckedChange={() => togglePlatform(p)}
-                      />
-                      <label htmlFor={p} className="text-sm cursor-pointer">{p}</label>
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Mục đích</Label>
-                <Select value={formData.purpose || "none"} onValueChange={(v) => setFormData({ ...formData, purpose: v === "none" ? "" : v })}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Chọn mục đích" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="none">Không chọn</SelectItem>
-                    {purposes.map(p => (
-                      <SelectItem key={p} value={p}>{p}</SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <div className="space-y-2">
-                <Label>AI Image Prompt</Label>
-                <Textarea
-                  value={formData.aiImagePrompt}
-                  onChange={(e) => setFormData({ ...formData, aiImagePrompt: e.target.value })}
-                  placeholder="Mô tả hình ảnh để AI tạo..."
-                  rows={3}
-                />
-              </div>
-
               {/* Image Upload Section */}
               <div className="space-y-2">
                 <Label className="flex items-center gap-2">
@@ -442,7 +337,6 @@ export function AdminContentPage() {
                   ref={fileInputRef}
                   onChange={handleImageUpload}
                   accept="image/*"
-                  multiple
                   className="hidden"
                 />
                 <Button
@@ -475,12 +369,6 @@ export function AdminContentPage() {
                             <X className="h-3 w-3" />
                           </Button>
                         </div>
-                        <Input
-                          className="mt-2"
-                          placeholder="Mô tả hình ảnh..."
-                          value={img.description}
-                          onChange={(e) => updateImageDescription(index, e.target.value)}
-                        />
                       </div>
                     ))}
                   </div>
@@ -498,14 +386,22 @@ export function AdminContentPage() {
           </div>
           
           <div className="flex justify-end gap-2">
-            <Button variant="outline" onClick={() => setIsDialogOpen(false)}>Hủy</Button>
-            <Button variant="outline" onClick={() => handleSave(true)}>Lưu bản nháp</Button>
-            <Button onClick={() => handleSave(false)}>Đăng nội dung</Button>
+            <Button variant="outline" onClick={() => setIsDialogOpen(false)} disabled={isSaving}>
+              Hủy
+            </Button>
+            <Button variant="outline" onClick={() => handleSave(true)} disabled={isSaving}>
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Lưu bản nháp
+            </Button>
+            <Button onClick={() => handleSave(false)} disabled={isSaving}>
+              {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+              Đăng nội dung
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
-      <AlertDialog open={!!deletingContent} onOpenChange={() => setDeletingContent(null)}>
+      <AlertDialog open={!!deletingContentId} onOpenChange={() => setDeletingContentId(null)}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Xóa Nội dung</AlertDialogTitle>

@@ -8,7 +8,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2, Clock, TrendingUp } from 'lucide-react';
+import { Copy, Download, Wand2, ArrowLeft, Calendar, Hash, Image, Pencil, CheckCircle, Upload, Trash2, Clock, TrendingUp, Loader2 } from 'lucide-react';
 import { LoginPromptModal } from '@/components/auth/LoginPromptModal';
 import { ReadingProgressBar } from '@/components/ReadingProgressBar';
 
@@ -16,10 +16,10 @@ export function ContentDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { getContentById, getTopicById, getSoftwareById, incrementCopyCount, images, updateContent, deleteImage } = useDataStore();
+  const { getTopicById, getSoftwareById, images, deleteImage } = useDataStore();
+  const { getContentById, incrementCopyCount, updateContent, isTopicVisible, isAdmin, loading } = useVisibleData();
   const { role, user, canEditContent, canPublishContent } = useAuth();
   const { buildCopyText } = useUserProfile();
-  const { isTopicVisible, isAdmin } = useVisibleData();
   const [showLoginModal, setShowLoginModal] = useState(false);
   
   const content = getContentById(id || '');
@@ -46,6 +46,15 @@ export function ContentDetailPage() {
     canEdit || 
     isAdminRole
   );
+
+  // Show loading state
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   // Redirect to not-found if content doesn't exist or topic is hidden for non-admin
   if (!content || !canViewContent) {
