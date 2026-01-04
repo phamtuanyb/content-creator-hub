@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import {
   Select,
   SelectContent,
@@ -16,31 +15,24 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { useNavigate, useSearchParams } from 'react-router-dom';
-import { Upload, X, Image, Send } from 'lucide-react';
-
-const platforms = ['Facebook', 'Zalo', 'Group', 'Instagram', 'TikTok'];
-const purposes = ['Giới thiệu', 'Chốt sale', 'Seeding', 'Chăm sóc', 'Khuyến mãi'];
+import { Upload, X, Image, Send, Loader2 } from 'lucide-react';
 
 export function EditorCreateContentPage() {
-  const { software, addContent, updateContent, getContentById, addImage, images, deleteImage } = useDataStore();
-  const { getVisibleTopics, isTopicVisible } = useVisibleData();
+  const { software } = useDataStore();
+  const { getVisibleTopics, isTopicVisible, addContent, updateContent, getContentById } = useVisibleData();
   const { user } = useAuth();
   const { toast } = useToast();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const editId = searchParams.get('edit');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
   const [formData, setFormData] = useState({
     title: '',
     body: '',
-    hashtags: '',
-    cta: '',
     topicId: '',
     softwareId: '',
-    platforms: [] as string[],
-    purpose: '',
-    aiImagePrompt: '',
   });
 
   const [uploadedImages, setUploadedImages] = useState<{ url: string; description: string }[]>([]);
@@ -55,23 +47,19 @@ export function EditorCreateContentPage() {
           return;
         }
 
-        const existingImages = images.filter(img => img.contentId === content.id);
-        setUploadedImages(existingImages.map(img => ({ url: img.url, description: img.description || '' })));
+        if (content.imageUrl) {
+          setUploadedImages([{ url: content.imageUrl, description: '' }]);
+        }
 
         setFormData({
           title: content.title,
           body: content.body,
-          hashtags: content.hashtags.join(', '),
-          cta: content.cta,
           topicId: content.topicId,
           softwareId: content.softwareId || '',
-          platforms: content.platforms,
-          purpose: content.purpose,
-          aiImagePrompt: content.aiImagePrompt || '',
         });
       }
     }
-  }, [editId, getContentById, images, user?.id, isTopicVisible, navigate]);
+  }, [editId, getContentById, user?.id, isTopicVisible, navigate]);
 
   const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
@@ -95,22 +83,7 @@ export function EditorCreateContentPage() {
     setUploadedImages(prev => prev.filter((_, i) => i !== index));
   };
 
-  const updateImageDescription = (index: number, description: string) => {
-    setUploadedImages(prev => prev.map((img, i) => 
-      i === index ? { ...img, description } : img
-    ));
-  };
-
-  const togglePlatform = (platform: string) => {
-    setFormData(prev => ({
-      ...prev,
-      platforms: prev.platforms.includes(platform)
-        ? prev.platforms.filter(p => p !== platform)
-        : [...prev.platforms, platform],
-    }));
-  };
-
-  const handleSave = (submitForApproval: boolean = false) => {
+  const handleSave = async (submitForApproval: boolean = false) => {
     if (!formData.title.trim()) {
       toast({ title: 'Lỗi', description: 'Vui lòng nhập tiêu đề nội dung', variant: 'destructive' });
       return;
@@ -119,66 +92,41 @@ export function EditorCreateContentPage() {
       toast({ title: 'Lỗi', description: 'Vui lòng nhập nội dung', variant: 'destructive' });
       return;
     }
-    if (!formData.topicId) {
-      toast({ title: 'Lỗi', description: 'Vui lòng chọn chủ đề', variant: 'destructive' });
-      return;
-    }
 
-    const hashtags = formData.hashtags.split(',').map(h => h.trim()).filter(Boolean);
-    
-    if (editId) {
-      updateContent(editId, {
-        title: formData.title,
-        body: formData.body,
-        hashtags,
-        cta: formData.cta,
-        topicId: formData.topicId,
-        softwareId: formData.softwareId || undefined,
-        platforms: formData.platforms,
-        purpose: formData.purpose,
-        aiImagePrompt: formData.aiImagePrompt,
-        imageUrl: uploadedImages[0]?.url,
-        imageDescription: uploadedImages[0]?.description,
-        status: 'draft', // Editor can only save as draft
-      });
-      
-      // Remove old images and add new ones
-      const oldImages = images.filter(img => img.contentId === editId);
-      oldImages.forEach(img => deleteImage(img.id));
-      
-      toast({ title: 'Đã cập nhật', description: submitForApproval ? 'Nội dung đã được gửi duyệt' : 'Nội dung đã được lưu' });
-    } else {
-      const contentId = String(Date.now());
-      addContent({
-        title: formData.title,
-        body: formData.body,
-        hashtags,
-        cta: formData.cta,
-        topicId: formData.topicId,
-        softwareId: formData.softwareId || undefined,
-        platforms: formData.platforms,
-        purpose: formData.purpose,
-        status: 'draft', // Editor always creates as draft
-        aiImagePrompt: formData.aiImagePrompt,
-        imageUrl: uploadedImages[0]?.url,
-        imageDescription: uploadedImages[0]?.description,
-        ownerId: user?.id, // Set owner
-      });
-
-      // Add uploaded images
-      uploadedImages.forEach(img => {
-        addImage({
-          url: img.url,
-          contentId: contentId,
-          contentTitle: formData.title,
-          description: img.description,
+    setIsSaving(true);
+    try {
+      if (editId) {
+        await updateContent(editId, {
+          title: formData.title,
+          body: formData.body,
+          topic_id: formData.topicId || undefined,
+          software_id: formData.softwareId || undefined,
+          image_url: uploadedImages[0]?.url || undefined,
+          status: 'draft', // Editor can only save as draft
         });
-      });
+        
+        toast({ title: 'Đã cập nhật', description: submitForApproval ? 'Nội dung đã được gửi duyệt' : 'Nội dung đã được lưu' });
+      } else {
+        await addContent({
+          title: formData.title,
+          body: formData.body,
+          topic_id: formData.topicId || undefined,
+          software_id: formData.softwareId || undefined,
+          status: 'draft', // Editor always creates as draft
+          image_url: uploadedImages[0]?.url || undefined,
+          owner_id: user?.id,
+        });
 
-      toast({ title: 'Đã tạo mới', description: submitForApproval ? 'Nội dung đã được gửi duyệt' : 'Nội dung đã được lưu' });
+        toast({ title: 'Đã tạo mới', description: submitForApproval ? 'Nội dung đã được gửi duyệt' : 'Nội dung đã được lưu' });
+      }
+
+      navigate('/editor/my-content');
+    } catch (error) {
+      console.error('Error saving content:', error);
+      toast({ title: 'Lỗi', description: 'Không thể lưu nội dung', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
-
-    navigate('/editor/my-content');
   };
 
   return (
@@ -210,35 +158,18 @@ export function EditorCreateContentPage() {
                 rows={10}
               />
             </div>
-            
-            <div className="space-y-2">
-              <Label>Hashtags (phân cách bằng dấu phẩy)</Label>
-              <Input
-                value={formData.hashtags}
-                onChange={(e) => setFormData({ ...formData, hashtags: e.target.value })}
-                placeholder="#MKT, #Sales, #Marketing"
-              />
-            </div>
-            
-            <div className="space-y-2">
-              <Label>CTA (Call to Action)</Label>
-              <Input
-                value={formData.cta}
-                onChange={(e) => setFormData({ ...formData, cta: e.target.value })}
-                placeholder="VD: Mua ngay →"
-              />
-            </div>
           </div>
 
           {/* Right Column */}
           <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Chủ đề *</Label>
-              <Select value={formData.topicId} onValueChange={(v) => setFormData({ ...formData, topicId: v })}>
+              <Label>Chủ đề</Label>
+              <Select value={formData.topicId || "none"} onValueChange={(v) => setFormData({ ...formData, topicId: v === "none" ? "" : v })}>
                 <SelectTrigger>
                   <SelectValue placeholder="Chọn chủ đề" />
                 </SelectTrigger>
                 <SelectContent>
+                  <SelectItem value="none">Không chọn</SelectItem>
                   {getVisibleTopics().map(t => (
                     <SelectItem key={t.id} value={t.id}>{t.nameVi}</SelectItem>
                   ))}
@@ -261,47 +192,6 @@ export function EditorCreateContentPage() {
               </Select>
             </div>
 
-            <div className="space-y-2">
-              <Label>Nền tảng</Label>
-              <div className="flex flex-wrap gap-3">
-                {platforms.map(p => (
-                  <div key={p} className="flex items-center gap-2">
-                    <Checkbox
-                      id={p}
-                      checked={formData.platforms.includes(p)}
-                      onCheckedChange={() => togglePlatform(p)}
-                    />
-                    <label htmlFor={p} className="text-sm cursor-pointer">{p}</label>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Mục đích</Label>
-              <Select value={formData.purpose || "none"} onValueChange={(v) => setFormData({ ...formData, purpose: v === "none" ? "" : v })}>
-                <SelectTrigger>
-                  <SelectValue placeholder="Chọn mục đích" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">Không chọn</SelectItem>
-                  {purposes.map(p => (
-                    <SelectItem key={p} value={p}>{p}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>AI Image Prompt</Label>
-              <Textarea
-                value={formData.aiImagePrompt}
-                onChange={(e) => setFormData({ ...formData, aiImagePrompt: e.target.value })}
-                placeholder="Mô tả hình ảnh để AI tạo..."
-                rows={3}
-              />
-            </div>
-
             {/* Image Upload Section */}
             <div className="space-y-2">
               <Label className="flex items-center gap-2">
@@ -313,7 +203,6 @@ export function EditorCreateContentPage() {
                 ref={fileInputRef}
                 onChange={handleImageUpload}
                 accept="image/*"
-                multiple
                 className="hidden"
               />
               <Button
@@ -346,12 +235,6 @@ export function EditorCreateContentPage() {
                           <X className="h-3 w-3" />
                         </Button>
                       </div>
-                      <Input
-                        className="mt-2"
-                        placeholder="Mô tả hình ảnh..."
-                        value={img.description}
-                        onChange={(e) => updateImageDescription(index, e.target.value)}
-                      />
                     </div>
                   ))}
                 </div>
@@ -361,9 +244,15 @@ export function EditorCreateContentPage() {
         </div>
         
         <div className="flex justify-end gap-2 mt-6 pt-6 border-t border-border">
-          <Button variant="outline" onClick={() => navigate('/editor/my-content')}>Hủy</Button>
-          <Button variant="outline" onClick={() => handleSave(false)}>Lưu bản nháp</Button>
-          <Button onClick={() => handleSave(true)} className="gap-2">
+          <Button variant="outline" onClick={() => navigate('/editor/my-content')} disabled={isSaving}>
+            Hủy
+          </Button>
+          <Button variant="outline" onClick={() => handleSave(false)} disabled={isSaving}>
+            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
+            Lưu bản nháp
+          </Button>
+          <Button onClick={() => handleSave(true)} className="gap-2" disabled={isSaving}>
+            {isSaving && <Loader2 className="h-4 w-4 mr-2 animate-spin" />}
             <Send className="h-4 w-4" />
             Gửi duyệt
           </Button>
