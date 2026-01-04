@@ -70,6 +70,12 @@ export function useContentSync() {
       .single();
 
     if (error) throw error;
+
+    // Ensure UI updates immediately even if realtime is delayed/unavailable
+    if (data) {
+      setContents((prev) => [data as DatabaseContent, ...prev.filter((c) => c.id !== data.id)]);
+    }
+
     return data;
   }, [user?.id]);
 
@@ -86,6 +92,12 @@ export function useContentSync() {
       .single();
 
     if (error) throw error;
+
+    // Ensure UI updates immediately even if realtime is delayed/unavailable
+    if (data) {
+      setContents((prev) => prev.map((c) => (c.id === id ? (data as DatabaseContent) : c)));
+    }
+
     return data;
   }, []);
 
@@ -97,17 +109,33 @@ export function useContentSync() {
       .eq('id', id);
 
     if (error) throw error;
+
+    // Ensure UI updates immediately even if realtime is delayed/unavailable
+    setContents((prev) => prev.filter((c) => c.id !== id));
   }, []);
 
   // Increment copy count
   const incrementCopyCount = useCallback(async (id: string) => {
-    const content = contents.find(c => c.id === id);
+    const content = contents.find((c) => c.id === id);
     if (!content) return;
 
-    await supabase
+    const nextCount = (content.copy_count || 0) + 1;
+
+    const { data, error } = await supabase
       .from('content')
-      .update({ copy_count: (content.copy_count || 0) + 1 })
-      .eq('id', id);
+      .update({ copy_count: nextCount })
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error incrementing copy count:', error);
+      return;
+    }
+
+    if (data) {
+      setContents((prev) => prev.map((c) => (c.id === id ? (data as DatabaseContent) : c)));
+    }
   }, [contents]);
 
   // Get content by ID
@@ -140,20 +168,36 @@ export function useContentSync() {
           table: 'content',
         },
         (payload) => {
-          console.log('Content change received:', payload);
-          
+          console.log('[realtime] content change:', payload.eventType, payload);
+
           if (payload.eventType === 'INSERT') {
-            setContents(prev => [payload.new as DatabaseContent, ...prev]);
-          } else if (payload.eventType === 'UPDATE') {
-            setContents(prev => 
-              prev.map(c => c.id === payload.new.id ? payload.new as DatabaseContent : c)
-            );
-          } else if (payload.eventType === 'DELETE') {
-            setContents(prev => prev.filter(c => c.id !== payload.old.id));
+            const row = payload.new as DatabaseContent | null;
+            if (!row?.id) return;
+            setContents((prev) => [row, ...prev.filter((c) => c.id !== row.id)]);
+            return;
+          }
+
+          if (payload.eventType === 'UPDATE') {
+            const row = payload.new as DatabaseContent | null;
+            if (!row?.id) return;
+            setContents((prev) => {
+              const exists = prev.some((c) => c.id === row.id);
+              return exists ? prev.map((c) => (c.id === row.id ? row : c)) : [row, ...prev];
+            });
+            return;
+          }
+
+          if (payload.eventType === 'DELETE') {
+            const oldRow = payload.old as Partial<DatabaseContent> | null;
+            const id = (oldRow as any)?.id as string | undefined;
+            if (!id) return;
+            setContents((prev) => prev.filter((c) => c.id !== id));
           }
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('[realtime] content-changes status:', status);
+      });
 
     return () => {
       supabase.removeChannel(channel);
